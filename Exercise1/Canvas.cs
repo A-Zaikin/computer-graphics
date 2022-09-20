@@ -15,15 +15,21 @@ namespace Exercise1
             var bmp = new Bitmap(pictureBox.Width, pictureBox.Height);
             Graphics = Graphics.FromImage(bmp);
             pictureBox.Image = bmp;
-
-            Graphics.Clear(backgroundColor);
+            
             this.pictureBox = pictureBox;
             BackgroundColor = backgroundColor;
+
+            Clear();
         }
 
         public Graphics Graphics { get; set; }
         public Color BackgroundColor { get; set; }
-        public float Width => pictureBox.Width;
-        public float Height => pictureBox.Height;
+        public int Width => pictureBox.Width;
+        public int Height => pictureBox.Height;
+
+        public void Clear()
+        {
+            Graphics.Clear(BackgroundColor);
+        }
     }
 }

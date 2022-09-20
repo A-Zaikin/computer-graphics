@@ -6,10 +6,11 @@ namespace Exercise1
 {
     public class Line : Shape
     {
-        public Line(Canvas canvas, float width, PointF start, PointF end, Color color,
-            DashStyle dashStyle = DashStyle.Solid,
-            LineCap startCap = LineCap.Flat, LineCap endCap = LineCap.Flat, 
-            CustomLineCap customStartCap = null, CustomLineCap customEndCap = null) : base(canvas)
+        public Line(Canvas canvas, float width,
+                PointF start, PointF end,
+                Color color, DashStyle dashStyle = DashStyle.Solid,
+                LineCap startCap = LineCap.Flat, LineCap endCap = LineCap.Flat,
+                CustomLineCap customStartCap = null, CustomLineCap customEndCap = null) : base(canvas)
         {
             Canvas = canvas;
             Pen = new Pen(color, width)
@@ -42,8 +43,10 @@ namespace Exercise1
 
         public override void Hide()
         {
-            var backgroundPen = new Pen(Canvas.BackgroundColor, Pen.Width);
-            Canvas.Graphics.DrawLine(backgroundPen, Start, End);
+            var color = Pen.Color;
+            Pen.Color = Canvas.BackgroundColor;
+            Canvas.Graphics.DrawLine(Pen, Start, End);
+            Pen.Color = color;
         }
     }
 }
