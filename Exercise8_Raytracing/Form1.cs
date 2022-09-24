@@ -15,35 +15,33 @@ namespace Exercise8_Raytracing
         public Form1()
         {
             InitializeComponent();
-
-            task = new Task(StartUpdate);
-            task.Start();
         }
 
         private void StartUpdate()
         {
             var raytracer = new Raytracer();
             var i = 0;
-            var speed = 100;
+            var speed = 0.075f;
 
             while (true)
             {
                 i++;
-                raytracer.SpherePosition = new Vector3(
-                    MathF.Sin(i / 200.0f * speed) * 2,
-                    MathF.Cos(i / 200.0f * speed) * 2,
-                    0);
+                raytracer.Spheres[0].Position = new Vector3(
+                    MathF.Sin(i * speed) * 2,
+                    0,
+                    MathF.Cos(i * speed) * 2);
 
-                using var frame = raytracer.RenderFrame();
-                var upscaledBitmap = new Bitmap(mainPictureBox.Size.Width, mainPictureBox.Size.Height);
-                using (var graphics = Graphics.FromImage(upscaledBitmap))
-                {
-                    graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-                    graphics.DrawImage(frame, 0, 0, mainPictureBox.Size.Width, mainPictureBox.Size.Height);
-                }
-                Invoke(new Action(() => mainPictureBox.Image = upscaledBitmap));
-                Thread.Sleep(speed);
+                raytracer.Camera.EyePosition.Y = MathF.Sin(i * speed + 1) * 1.5f + 0.5f;
+
+                var frame = raytracer.RenderFrame();
+                Invoke(new Action(() => mainPictureBox.Image = frame));
             }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            task = new Task(StartUpdate);
+            task.Start();
         }
     }
 }
