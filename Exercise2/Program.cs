@@ -3,10 +3,6 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Exercise2
 {
@@ -14,40 +10,26 @@ namespace Exercise2
     {
         public static List<Polygon> Polygons;
 
-        private static Task update;
-
         private static void Main()
         {
             Polygons = new() {
-                new RegularPolygon(new Vector2(0.5f, -0.5f), 0.3f, 3, -MathF.PI / 6),
-                new RegularPolygon(new Vector2(-0.5f, -0.5f), 0.3f, 4, MathF.PI / 4),
-                new RegularPolygon(new Vector2(0.5f, 0.5f), 0.3f, 50),
-                new RegularPolygon(new Vector2(-0.5f, 0.5f), 0.3f, 6)
+                new RegularPolygon(new Vector2(0.5f, -0.5f), 0.3f, 3, -MathF.PI / 6, color: new Vector3(0.7f, 1, 0.1f)),
+                new RegularPolygon(new Vector2(-0.5f, -0.5f), 0.3f, 4, MathF.PI / 4, color: new Vector3(0, 0.2f, 0.9f)),
+                new RegularPolygon(new Vector2(0.5f, 0.5f), 0.3f, 50, color: new Vector3(1, 0.3f, 0.2f)),
+                new RegularPolygon(new Vector2(-0.5f, 0.5f), 0.3f, 6, color: new Vector3(0.1f, 1, 1))
             };
+
+            //Polygons[0].Scale = Matrix4.CreateScale(0.5f);
 
             var nativeWindowSettings = new NativeWindowSettings()
             {
                 Size = new Vector2i(600, 600),
                 Title = "Exercise 2",
-                // This is needed to run on macos
                 Flags = ContextFlags.ForwardCompatible,
             };
 
-            //update = Task.Run(Update);
-
-            using (var window = new Window(GameWindowSettings.Default, nativeWindowSettings))
-            {
-                window.Run();
-            }
-        }
-
-        private static void Update()
-        {
-            while (true)
-            {
-                Polygons[0].Move(new Vector2(0.0001f, -0.0001f));
-                Thread.Sleep(16);
-            }
+            using var window = new Window(GameWindowSettings.Default, nativeWindowSettings);
+            window.Run();
         }
     }
 }
