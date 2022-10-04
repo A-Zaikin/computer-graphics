@@ -58,12 +58,13 @@ namespace Exercise2
                 var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
                 GL.Uniform4(vertexColorLocation, polygon.Color.X, polygon.Color.Y, polygon.Color.Z, 1.0f);
 
-                //var transformUniformLocation = GL.GetUniformLocation(_shader.Handle, "transform");
-                //var transform = polygon.Scale;
-                //GL.UniformMatrix4(transformUniformLocation, true, ref transform);
+                var transformUniformLocation = GL.GetUniformLocation(_shader.Handle, "transform");
+                var transform = polygon.GetTransform();
+                transform *= Matrix4.CreateScale(1f / Size.X * 2, 1f / Size.Y * 2, 1 / (Size.X + Size.Y) * 2);
+                GL.UniformMatrix4(transformUniformLocation, true, ref transform);
 
                 GL.BindVertexArray(polygon.VertexArrayObject);
-                GL.DrawArrays(PrimitiveType.TriangleFan, 0, polygon.VertexCount);
+                GL.DrawArrays(PrimitiveType.TriangleFan, 0, polygon.Points.Length);
             }
 
             SwapBuffers();
