@@ -10,6 +10,7 @@ namespace Exercise2
     public class Window : GameWindow
     {
         private Shader _shader;
+        private PolygonMode currentPolygonMode;
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -78,6 +79,16 @@ namespace Exercise2
             if (input.IsKeyDown(Keys.Escape))
             {
                 Close();
+            }
+            else if (input.IsKeyPressed(Keys.P))
+            {
+                currentPolygonMode = currentPolygonMode switch
+                {
+                    PolygonMode.Fill => PolygonMode.Line,
+                    PolygonMode.Line => PolygonMode.Point,
+                    _ => PolygonMode.Fill,
+                };
+                GL.PolygonMode(MaterialFace.FrontAndBack, currentPolygonMode);
             }
         }
 
