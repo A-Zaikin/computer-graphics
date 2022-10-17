@@ -57,7 +57,10 @@ namespace Exercise4
             _shader.Use();
 
             var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
-            GL.Uniform4(vertexColorLocation, 1, 0, 0, 1.0f);
+            GL.Uniform4(vertexColorLocation, 1f, 0f, 0f, 1.0f);
+
+            var resolutionLocation = GL.GetUniformLocation(_shader.Handle, "resolution");
+            GL.Uniform2(resolutionLocation, (float)Size.X, (float)Size.Y);
 
             GL.BindVertexArray(fullScreenVao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
