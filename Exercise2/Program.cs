@@ -96,7 +96,7 @@ namespace Exercise2
 
             // Bouncing
             var position = new Vector2(300, -50);
-            var velocity = new Vector2(5, 3);
+            var velocity = new Vector2(1, 0.5f);
             var bouncingPolygon = new RegularPolygon(Vector2.Zero, 80, 9, color: new Vector3(1f, 1f, 0.2f));
             bouncingPolygon.Animations.Add(new Animation(AnimationType.Translation, () =>
             {

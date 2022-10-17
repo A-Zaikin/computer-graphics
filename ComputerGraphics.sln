@@ -9,7 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exercise2", "Exercise2\Exer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise2_oldOpenGL", "Exercise2_oldOpenGL\Exercise2_oldOpenGL.csproj", "{658CB1D1-9F00-488B-BAF9-5690F6D3C5DA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise8_Raytracing", "Exercise8_Raytracing\Exercise8_Raytracing.csproj", "{312BAADC-EE06-4154-B64D-22FAB3FAC0FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exercise8_Raytracing", "Exercise8_Raytracing\Exercise8_Raytracing.csproj", "{312BAADC-EE06-4154-B64D-22FAB3FAC0FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise3", "Exercise3\Exercise3.csproj", "{582BDAB7-1793-44D9-B591-FAB695E3CA30}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exercise4", "Exercise4\Exercise4.csproj", "{59E0568F-DAE1-4AEA-86B7-D6A19D2D6D01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,14 @@ Global
 		{312BAADC-EE06-4154-B64D-22FAB3FAC0FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{312BAADC-EE06-4154-B64D-22FAB3FAC0FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{312BAADC-EE06-4154-B64D-22FAB3FAC0FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{582BDAB7-1793-44D9-B591-FAB695E3CA30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{582BDAB7-1793-44D9-B591-FAB695E3CA30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{582BDAB7-1793-44D9-B591-FAB695E3CA30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{582BDAB7-1793-44D9-B591-FAB695E3CA30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59E0568F-DAE1-4AEA-86B7-D6A19D2D6D01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59E0568F-DAE1-4AEA-86B7-D6A19D2D6D01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59E0568F-DAE1-4AEA-86B7-D6A19D2D6D01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59E0568F-DAE1-4AEA-86B7-D6A19D2D6D01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
