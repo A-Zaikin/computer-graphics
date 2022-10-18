@@ -18,6 +18,13 @@ namespace Exercise4
         };
         private int fullScreenVao;
 
+        private Vector2 currentLocation;
+        private Vector2 direction;
+        private Vector2 velocity;
+        private float acceleration = 5f;
+        private float scale = 1;
+        private float zoomSpeed = 0.5f;
+
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
         {
@@ -56,8 +63,11 @@ namespace Exercise4
 
             _shader.Use();
 
-            var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
-            GL.Uniform4(vertexColorLocation, 1f, 0f, 0f, 1.0f);
+            var translateLocation = GL.GetUniformLocation(_shader.Handle, "translate");
+            GL.Uniform2(translateLocation, currentLocation);
+
+            var scaleLocation = GL.GetUniformLocation(_shader.Handle, "scale");
+            GL.Uniform1(scaleLocation, scale);
 
             var resolutionLocation = GL.GetUniformLocation(_shader.Handle, "resolution");
             GL.Uniform2(resolutionLocation, (float)Size.X, (float)Size.Y);
@@ -77,6 +87,33 @@ namespace Exercise4
             {
                 Close();
             }
+
+            direction = Vector2.Zero;
+            if (input.IsKeyDown(Keys.W))
+                direction.Y += 1;
+            if (input.IsKeyDown(Keys.A))
+                direction.X -= 1;
+            if (input.IsKeyDown(Keys.S))
+                direction.Y -= 1;
+            if (input.IsKeyDown(Keys.D))
+                direction.X += 1;
+            if (direction.X > 0.01 || direction.Y > 0.01)
+            {
+                direction.Normalize();
+            }
+
+            velocity += acceleration * (float)e.Time * direction;
+            currentLocation += velocity;
+
+            if (input.IsKeyDown(Keys.K))
+                scale *= (1 + zoomSpeed * (float)e.Time);
+            if (input.IsKeyDown(Keys.L))
+                scale /= (1 + zoomSpeed * (float)e.Time);
+
+            if (scale > 3)
+                scale = 1;
+            else if (scale < 1)
+                scale = 3;
         }
 
         protected override void OnResize(ResizeEventArgs e)

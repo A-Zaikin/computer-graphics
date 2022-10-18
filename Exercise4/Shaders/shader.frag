@@ -1,35 +1,43 @@
 ﻿#version 330 core
 out vec4 FragColor;
 
-uniform vec4 customColor;
 uniform vec2 resolution;
+uniform vec2 translate;
+uniform float scale;
 
-int cicrle(vec2 location) {
-    float radius = 0.5;
-    float distance = location.x * location.x + location.y * location.y;
-    if (distance < radius * radius) {
-        return 1;
+#define MAX_DEPTH 7
+#define PIXELS_PER_UNIT 2187
+
+int carpet_fractal(vec2 uv) {
+    uv = abs(uv - int(uv));
+
+    int depth = 0;
+    float square_size = 1.0 / 3;
+    float cell_x = int(uv.x);
+    float cell_y = int(uv.y);
+
+    while (depth < MAX_DEPTH) {
+        if (uv.x > cell_x + square_size
+            && uv.x < cell_x + 2 * square_size
+            && uv.y > cell_y + square_size
+            && uv.y < cell_y + 2 * square_size) {
+            return 0;
+        }
+        depth++;
+        cell_x += square_size * int((uv.x - cell_x) / square_size);
+        cell_y += square_size * int((uv.y - cell_y) / square_size);
+        square_size /= 3;
     }
-    return 0;
+    return 1;
 }
 
-void fractal(vec2 value, int depth)
-{
-    if (depth == 0) {
-        return;
-    }
+void main(void) {
+    vec2 uv = (gl_FragCoord.xy + translate) / PIXELS_PER_UNIT;
+    uv /= scale;
 
-    if (depth == 3) {
-        FragColor = vec4(1, 0, 0, 1);
+    if (carpet_fractal(uv) == 1) {
+        FragColor = vec4(0.184, 0.729, 0.729, 1);
+    } else {
+        FragColor = vec4(0, 0, 0, 0);
     }
-    vec2 newValue = {1, };
-}
-
-void main(void)
-{
-    float scale = resolution.x < resolution.y ? resolution.x : resolution.y;
-    vec2 location = (gl_FragCoord.xy - resolution.xy * 0.5) / scale;
-    FragColor = customColor;
-    vec2 start = {1, 0};
-    fractal(start, 5);
 }

@@ -21,12 +21,14 @@ namespace Exercise4
 
             var nativeWindowSettings = new NativeWindowSettings()
             {
-                Size = new Vector2i(800, 600),
+                Size = new Vector2i(729, 729),
                 Title = "Exercise 4",
                 Flags = ContextFlags.ForwardCompatible,
+                NumberOfSamples = 4,
+                WindowState = WindowState.Fullscreen,
             };
-
             window = new Window(GameWindowSettings.Default, nativeWindowSettings);
+            window.VSync = VSyncMode.On;
             window.Run();
             window.Dispose();
         }
