@@ -24,6 +24,16 @@ namespace Exercise4
         private float acceleration = 5f;
         private float scale = 1;
         private float zoomSpeed = 0.5f;
+        private FractalMode mode;
+        private float rotation = MathF.PI / 4;
+        private float rotationSpeed = 0.5f;
+
+        private enum FractalMode
+        {
+            Carpet = 0,
+            Triangle = 1,
+            Cross = 2,
+        }
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -72,6 +82,12 @@ namespace Exercise4
             var resolutionLocation = GL.GetUniformLocation(_shader.Handle, "resolution");
             GL.Uniform2(resolutionLocation, (float)Size.X, (float)Size.Y);
 
+            var modeLocation = GL.GetUniformLocation(_shader.Handle, "mode");
+            GL.Uniform1(modeLocation, (int)mode);
+
+            var rotationLocation = GL.GetUniformLocation(_shader.Handle, "rotation");
+            GL.Uniform1(rotationLocation, rotation);
+
             GL.BindVertexArray(fullScreenVao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
@@ -86,6 +102,20 @@ namespace Exercise4
             if (input.IsKeyDown(Keys.Escape))
             {
                 Close();
+            }
+
+            if (input.IsKeyPressed(Keys.R))
+            {
+                mode = mode switch
+                {
+                    FractalMode.Carpet => FractalMode.Triangle,
+                    FractalMode.Triangle => FractalMode.Cross,
+                    _ => FractalMode.Carpet
+                };
+                velocity = Vector2.Zero;
+                currentLocation = Vector2.Zero;
+                scale = 1;
+                rotation = MathF.PI / 4;
             }
 
             direction = Vector2.Zero;
@@ -103,17 +133,28 @@ namespace Exercise4
             }
 
             velocity += acceleration * (float)e.Time * direction;
-            currentLocation += velocity;
+            currentLocation += mode == FractalMode.Carpet
+                ? velocity
+                : velocity / scale;
 
             if (input.IsKeyDown(Keys.K))
                 scale *= (1 + zoomSpeed * (float)e.Time);
             if (input.IsKeyDown(Keys.L))
                 scale /= (1 + zoomSpeed * (float)e.Time);
 
-            if (scale > 3)
-                scale = 1;
-            else if (scale < 1)
-                scale = 3;
+            if (mode == FractalMode.Carpet)
+            {
+                if (scale > 3)
+                    scale = 1;
+                else if (scale < 1)
+                    scale = 3;
+            }
+
+            var scaleCoefficient = mode == FractalMode.Carpet ? 1 : scale;
+            if (input.IsKeyDown(Keys.I))
+                rotation += rotationSpeed * (float)e.Time / scaleCoefficient;
+            if (input.IsKeyDown(Keys.O))
+                rotation -= rotationSpeed * (float)e.Time / scaleCoefficient;
         }
 
         protected override void OnResize(ResizeEventArgs e)
