@@ -36,17 +36,40 @@ namespace Exercise6
         private static void CreatePolygons()
         {
             Shapes = new();
-            var square = new Shape(new Vector3[] {
-                new Vector3(0, 50, 0),
-                new Vector3(30, 0, 10),
-                new Vector3(10, 0, 30),
-                new Vector3(-15, 0, -15),
-                new Vector3(30, 0, 10),
-            }, new Vector3(0.8f, 0.1f, 0.4f));
-            square.Scale *= Matrix4.CreateScale(6);
-            square.Animations.Add(new Animation(AnimationType.Rotation,
-                () => Matrix4.CreateRotationX(Time) * Matrix4.CreateRotationY(Time / 2.1f)));
-            Shapes.Add(square);
+            var apex = new Vector3(0, 2, 0);
+            var p1 = new Vector3(0, 0, 0.5f);
+            var p2 = new Vector3(0.5f, 0, -0.5f);
+            var p3 = new Vector3(-0.5f, 0, -0.5f);
+            var prism = new Shape(new Vector3[] {
+                apex, p1, p2,
+                apex, p2, p3,
+                apex, p3, p1,
+                p1, p3, p2,
+            }, new Vector3(1f, 0f, 0f));
+            prism.Scale *= Matrix4.CreateScale(3);
+            prism.AddAnimation(AnimationType.Rotation,
+                () => Matrix4.CreateRotationX(Time)
+                * Matrix4.CreateRotationY(Time / 2.1f)
+                * Matrix4.CreateRotationZ(Time / 3.1f));
+            Shapes.Add(prism);
+
+            //var square1 = new Shape(new Vector3[] {
+            //    new Vector3(-1, -1, 0),
+            //    new Vector3(-1, 1, 0),
+            //    new Vector3(1, 1, 0),
+            //    new Vector3(1, -1, 0),
+            //}, new Vector3(0.8f, 0.1f, 0.4f));
+            //square1.Translation *= Matrix4.CreateTranslation(Vector3.UnitX * -2 + Vector3.UnitZ * 10);
+            //Shapes.Add(square1);
+
+            //var square2 = new Shape(new Vector3[] {
+            //    new Vector3(-1, -1, 0),
+            //    new Vector3(-1, 1, 0),
+            //    new Vector3(1, 1, 0),
+            //    new Vector3(1, -1, 0),
+            //}, new Vector3(0.1f, 0.8f, 0.4f));
+            //square2.Translation *= Matrix4.CreateTranslation(Vector3.UnitX * 2 + Vector3.UnitZ * 200);
+            //Shapes.Add(square2);
         }
     }
 }

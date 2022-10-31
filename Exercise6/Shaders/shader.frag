@@ -3,7 +3,11 @@ out vec4 FragColor;
 
 uniform vec4 customColor;
 
+in float zDistance;
+in vec3 color;
+
 void main()
 {
-    FragColor = vec4(customColor.x, customColor.y, gl_FragCoord.z, 1);
+    //FragColor = customColor * (1 - clamp(zDistance, 0, 20) / 20);
+    FragColor = vec4(color, 1);
 }

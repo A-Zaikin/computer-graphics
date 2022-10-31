@@ -69,6 +69,17 @@ namespace Exercise6
             transform *= Matrix4.CreateTranslation(center3D);
             return transform;
         }
+
+        public void AddAnimation(AnimationType type, Func<Matrix4> tranformation)
+        {
+            Animations.Add(new Animation { Type = type, Transformation = tranformation });
+        }
+
+        public class Animation
+        {
+            public AnimationType Type;
+            public Func<Matrix4> Transformation;
+        }
     }
 
     public enum AnimationType
@@ -76,17 +87,5 @@ namespace Exercise6
         Translation,
         Rotation,
         Scale
-    }
-
-    public class Animation
-    {
-        public AnimationType Type;
-        public Func<Matrix4> Transformation;
-
-        public Animation(AnimationType type, Func<Matrix4> transformation)
-        {
-            Type = type;
-            Transformation = transformation;
-        }
     }
 }

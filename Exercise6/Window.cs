@@ -50,29 +50,41 @@ namespace Exercise6
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
 
             _shader.Use();
 
-            foreach (var polygon in Program.Shapes)
+            GL.Enable(EnableCap.DepthTest);
+            GL.DepthMask(true);
+
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            GL.Enable(EnableCap.CullFace);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.DepthClamp);
+            GL.DepthFunc(DepthFunction.Less);
+            GL.DepthMask(true);
+
+            foreach (var shape in Program.Shapes)
             {
                 var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
-                GL.Uniform4(vertexColorLocation, polygon.Color.X, polygon.Color.Y, polygon.Color.Z, 1.0f);
+                GL.Uniform4(vertexColorLocation, shape.Color.X, shape.Color.Y, shape.Color.Z, 1.0f);
 
-                var transformUniformLocation = GL.GetUniformLocation(_shader.Handle, "transform");
-                var transform = polygon.GetTransform();
-                transform *= Matrix4.CreateScale(1f / Size.X, 1f / Size.Y, 1f / Math.Min(Size.X, Size.Y));
+                var modelLocation = GL.GetUniformLocation(_shader.Handle, "model");
+                var model = shape.GetTransform();
+                GL.UniformMatrix4(modelLocation, true, ref model);
 
-                //transform *= Matrix4.CreatePerspectiveFieldOfView(
-                //    MathHelper.DegreesToRadians(45),
-                //    (float)Size.X / Size.Y, 0.1f, 100);
+                var view = Matrix4.LookAt(-10 * Vector3.UnitZ, Vector3.Zero, -Vector3.UnitY);
+                var viewLocation = GL.GetUniformLocation(_shader.Handle, "view");
+                GL.UniformMatrix4(viewLocation, true, ref view);
 
-                //transform *= Matrix4.LookAt(new Vector3(0, 0, -10), Vector3.One, new Vector3(0, 1, 0));
+                var projection = Matrix4.CreatePerspectiveFieldOfView(
+                    MathHelper.DegreesToRadians(45),
+                    (float)Size.X / Size.Y, 0.1f, 10000f);
+                var projectionLocation = GL.GetUniformLocation(_shader.Handle, "projection");
+                GL.UniformMatrix4(projectionLocation, true, ref projection);
 
-                GL.UniformMatrix4(transformUniformLocation, true, ref transform);
-
-                GL.BindVertexArray(polygon.VertexArrayObject);
-                GL.DrawArrays(PrimitiveType.TriangleFan, 0, polygon.Points.Length);
+                GL.BindVertexArray(shape.VertexArrayObject);
+                GL.DrawArrays(PrimitiveType.Triangles, 0, shape.Points.Length);
             }
 
             SwapBuffers();
