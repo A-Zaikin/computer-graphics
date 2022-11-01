@@ -2,14 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Exercise6
 {
-    public class Shape
+    public class Polyhedron
     {
         public readonly Vector3[] Points;
+        public readonly int[] Indices;
+
         public readonly Vector3 Center;
 
         public int VertexArrayObject;
@@ -21,15 +21,19 @@ namespace Exercise6
 
         public List<Animation> Animations = new();
 
-        public Shape(Vector3[] points, Vector3 color = default)
+        public Polyhedron(Vector3[] points, int[] indices, Vector3 color = default)
         {
             Points = points;
+            Indices = indices;
             Center = Points.Aggregate((current, point) => current += point) / Points.Length;
 
             Color = color == default
                 ? new Vector3(0.2f, 0.5f, 0.1f)
                 : color;
         }
+
+        protected Polyhedron(Shape shape, Vector3 color = default)
+            : this(shape.Points, shape.Indices.ToArray(), color) { }
 
         //public static Matrix4 GetRotationMatrix(float angle, Vector3 point)
         //{
@@ -79,6 +83,18 @@ namespace Exercise6
         {
             public AnimationType Type;
             public Func<Matrix4> Transformation;
+        }
+
+        public class Shape
+        {
+            public Vector3[] Points;
+            public List<int> Indices;
+
+            public Shape(int pointCount)
+            {
+                Points = new Vector3[pointCount];
+                Indices = new();
+            }
         }
     }
 

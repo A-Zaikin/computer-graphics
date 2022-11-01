@@ -22,28 +22,33 @@ namespace Exercise6
             base.OnLoad();
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-            LoadPolygons();
+            LoadPolyhedrons();
 
             _shader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
             _shader.Use();
         }
 
-        private void LoadPolygons()
+        private void LoadPolyhedrons()
         {
-            foreach (var shape in Program.Shapes)
+            foreach (var polyhedron in Program.Polyhedrons)
             {
                 var newVertexBufferObject = GL.GenBuffer();
                 GL.BindBuffer(BufferTarget.ArrayBuffer, newVertexBufferObject);
 
-                var vertices = shape.GetVertices();
+                var vertices = polyhedron.GetVertices();
                 GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float),
-                    vertices, BufferUsageHint.StreamDraw);
+                    vertices, BufferUsageHint.StaticDraw);
 
-                shape.VertexArrayObject = GL.GenVertexArray();
-                GL.BindVertexArray(shape.VertexArrayObject);
+                polyhedron.VertexArrayObject = GL.GenVertexArray();
+                GL.BindVertexArray(polyhedron.VertexArrayObject);
 
                 GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
                 GL.EnableVertexAttribArray(0);
+
+                var elementBufferObject = GL.GenBuffer();
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, polyhedron.Indices.Length * sizeof(uint),
+                    polyhedron.Indices, BufferUsageHint.StaticDraw);
             }
         }
 
@@ -52,7 +57,6 @@ namespace Exercise6
             base.OnRenderFrame(e);
 
             _shader.Use();
-
             GL.Enable(EnableCap.DepthTest);
             GL.DepthMask(true);
 
@@ -64,13 +68,13 @@ namespace Exercise6
             GL.DepthFunc(DepthFunction.Less);
             GL.DepthMask(true);
 
-            foreach (var shape in Program.Shapes)
+            foreach (var polyhedron in Program.Polyhedrons)
             {
                 var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
-                GL.Uniform4(vertexColorLocation, shape.Color.X, shape.Color.Y, shape.Color.Z, 1.0f);
+                GL.Uniform4(vertexColorLocation, polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
 
                 var modelLocation = GL.GetUniformLocation(_shader.Handle, "model");
-                var model = shape.GetTransform();
+                var model = polyhedron.GetTransform();
                 GL.UniformMatrix4(modelLocation, true, ref model);
 
                 var view = Matrix4.LookAt(-10 * Vector3.UnitZ, Vector3.Zero, -Vector3.UnitY);
@@ -83,8 +87,9 @@ namespace Exercise6
                 var projectionLocation = GL.GetUniformLocation(_shader.Handle, "projection");
                 GL.UniformMatrix4(projectionLocation, true, ref projection);
 
-                GL.BindVertexArray(shape.VertexArrayObject);
-                GL.DrawArrays(PrimitiveType.Triangles, 0, shape.Points.Length);
+                GL.BindVertexArray(polyhedron.VertexArrayObject);
+                //GL.DrawArrays(PrimitiveType.Triangles, 0, polyhedron.Points.Length);
+                GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
             }
 
             SwapBuffers();
