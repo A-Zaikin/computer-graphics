@@ -3,7 +3,6 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
-using System;
 
 namespace Exercise6
 {
@@ -16,8 +15,8 @@ namespace Exercise6
         private Shader _shader;
         private PolygonMode currentPolygonMode;
 
-        private Vector3 cameraPosition = -10 * Vector3.UnitZ;
-        private float rotationSpeed = 2;
+        private Vector2 globalRotation;
+        private float rotationSpeed = 1f;
         private bool manualRotation = true;
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
@@ -122,31 +121,22 @@ namespace Exercise6
                 manualRotation = !manualRotation;
             }
 
+            globalRotation = Vector2.Zero;
             if (input.IsKeyDown(Keys.W))
-            {
-                var newPosition = VectorHelper.Rotate(cameraPosition.Yz, -rotationSpeed * (float)e.Time);
-                if (newPosition.X < 9 && newPosition.X > -9)
-                {
-                    cameraPosition.Yz = newPosition;
-                }
-            }
+                globalRotation.X = rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.S))
-            {
-                var newPosition = VectorHelper.Rotate(cameraPosition.Yz, rotationSpeed * (float)e.Time);
-                if (newPosition.X < 9 && newPosition.X > -9)
-                {
-                    cameraPosition.Yz = newPosition;
-                }
-            }
+                globalRotation.X = -rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.A))
-                cameraPosition.Xz = VectorHelper.Rotate(cameraPosition.Xz, rotationSpeed * (float)e.Time);
+                globalRotation.Y = -rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.D))
-                cameraPosition.Xz = VectorHelper.Rotate(cameraPosition.Xz, -rotationSpeed * (float)e.Time);
-            view = Matrix4.LookAt(cameraPosition, Vector3.Zero, Vector3.UnitY);
-
+                globalRotation.Y = rotationSpeed * (float)e.Time;
             foreach (var polyhedron in Program.Polyhedrons)
             {
-                if (!manualRotation)
+                if (manualRotation)
+                {
+                    polyhedron.Rotation += new Vector3(globalRotation.X, globalRotation.Y, 0);
+                }
+                else
                 {
                     polyhedron.Update();
                 }
