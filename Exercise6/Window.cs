@@ -2,15 +2,23 @@
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Windowing.Desktop;
-using System;
 using OpenTK.Mathematics;
+using System;
 
 namespace Exercise6
 {
     public class Window : GameWindow
     {
+        private Matrix4 view = Matrix4.LookAt(-10 * Vector3.UnitZ, Vector3.Zero, Vector3.UnitY);
+        private float verticalFov = MathHelper.DegreesToRadians(45);
+        private Matrix4 projection;
+
         private Shader _shader;
         private PolygonMode currentPolygonMode;
+
+        private Vector3 cameraPosition = -10 * Vector3.UnitZ;
+        private float rotationSpeed = 2;
+        private bool manualRotation = true;
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -67,24 +75,19 @@ namespace Exercise6
             GL.DepthFunc(DepthFunction.Less);
             GL.DepthMask(true);
 
+            var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
+            var modelLocation = GL.GetUniformLocation(_shader.Handle, "model");
+            var viewLocation = GL.GetUniformLocation(_shader.Handle, "view");
+            var projectionLocation = GL.GetUniformLocation(_shader.Handle, "projection");
+
             foreach (var polyhedron in Program.Polyhedrons)
             {
-                var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
                 GL.Uniform4(vertexColorLocation, polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
 
-                var modelLocation = GL.GetUniformLocation(_shader.Handle, "model");
-                polyhedron.Update();
                 var model = polyhedron.GetTransform();
+
                 GL.UniformMatrix4(modelLocation, true, ref model);
-
-                var view = Matrix4.LookAt(-10 * Vector3.UnitZ, Vector3.Zero, -Vector3.UnitY);
-                var viewLocation = GL.GetUniformLocation(_shader.Handle, "view");
                 GL.UniformMatrix4(viewLocation, true, ref view);
-
-                var projection = Matrix4.CreatePerspectiveFieldOfView(
-                    MathHelper.DegreesToRadians(45),
-                    (float)Size.X / Size.Y, 0.1f, 10000f);
-                var projectionLocation = GL.GetUniformLocation(_shader.Handle, "projection");
                 GL.UniformMatrix4(projectionLocation, true, ref projection);
 
                 GL.BindVertexArray(polyhedron.VertexArrayObject);
@@ -103,7 +106,8 @@ namespace Exercise6
             {
                 Close();
             }
-            else if (input.IsKeyPressed(Keys.P))
+
+            if (input.IsKeyPressed(Keys.P))
             {
                 currentPolygonMode = currentPolygonMode switch
                 {
@@ -112,12 +116,50 @@ namespace Exercise6
                 };
                 GL.PolygonMode(MaterialFace.FrontAndBack, currentPolygonMode);
             }
+
+            if (input.IsKeyPressed(Keys.Space))
+            {
+                manualRotation = !manualRotation;
+            }
+
+            if (input.IsKeyDown(Keys.W))
+            {
+                var newPosition = VectorHelper.Rotate(cameraPosition.Yz, -rotationSpeed * (float)e.Time);
+                if (newPosition.X < 9 && newPosition.X > -9)
+                {
+                    cameraPosition.Yz = newPosition;
+                }
+            }
+            if (input.IsKeyDown(Keys.S))
+            {
+                var newPosition = VectorHelper.Rotate(cameraPosition.Yz, rotationSpeed * (float)e.Time);
+                if (newPosition.X < 9 && newPosition.X > -9)
+                {
+                    cameraPosition.Yz = newPosition;
+                }
+            }
+            if (input.IsKeyDown(Keys.A))
+                cameraPosition.Xz = VectorHelper.Rotate(cameraPosition.Xz, rotationSpeed * (float)e.Time);
+            if (input.IsKeyDown(Keys.D))
+                cameraPosition.Xz = VectorHelper.Rotate(cameraPosition.Xz, -rotationSpeed * (float)e.Time);
+            view = Matrix4.LookAt(cameraPosition, Vector3.Zero, Vector3.UnitY);
+
+            foreach (var polyhedron in Program.Polyhedrons)
+            {
+                if (!manualRotation)
+                {
+                    polyhedron.Update();
+                }
+            }
         }
 
         protected override void OnResize(ResizeEventArgs e)
         {
             base.OnResize(e);
             GL.Viewport(0, 0, Size.X, Size.Y);
+
+            projection = Matrix4.CreatePerspectiveFieldOfView(
+                verticalFov, (float)Size.X / Size.Y, 0.1f, 10000f);
         }
     }
 }

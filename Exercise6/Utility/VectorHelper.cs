@@ -1,4 +1,6 @@
 ﻿using OpenTK.Mathematics;
+using System;
+using System.Linq;
 
 namespace Exercise6
 {
@@ -11,14 +13,22 @@ namespace Exercise6
             return (float)MathHelper.Atan2(det, dot); //atan2(sin, cos)
         }
 
-        public static float Distance(Vector2 lineStart, Vector2 lineDirection, Vector2 point)
+        public static float Distance(Vector2 lineStart, Vector2 linePoint, Vector2 point)
         {
+            var lineDirection = linePoint - lineStart;
             var numerator = MathHelper.Abs(lineDirection.Y * point.X
                 - lineDirection.X * point.Y
                 - lineDirection.Y * lineStart.X
                 + lineDirection.X * lineStart.Y);
             var denominator = MathHelper.Sqrt(point.X * point.X + point.Y * point.Y);
             return (float)(numerator / denominator);
+        }
+
+        public static Vector2 Rotate(Vector2 p, float angle)
+        {
+            return new Vector2(
+                p.X * MathF.Cos(angle) - p.Y * MathF.Sin(angle),
+                p.X * MathF.Sin(angle) + p.Y * MathF.Cos(angle));
         }
     }
 }

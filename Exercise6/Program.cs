@@ -23,7 +23,7 @@ namespace Exercise6
 
             var nativeWindowSettings = new NativeWindowSettings()
             {
-                Size = new Vector2i(500, 500),
+                Size = new Vector2i(800, 800),
                 Title = "Exercise 6",
                 Flags = ContextFlags.ForwardCompatible,
             };
@@ -37,11 +37,12 @@ namespace Exercise6
         {
             Polyhedrons = new();
 
-            var cylinder = new Prismatoid(
-                Polygon.CreateRegular(Vector2.Zero, 1, 3),
-                Polygon.CreateRegular(Vector2.Zero, 1, 5));
+            var cylinder = Prismatoid.Create(
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.7f, 56),
+                PolygonHelper.CreateRegular(Vector2.Zero, 1.5f, 91),
+                3f);
             cylinder.Color = new Vector3(0, 1, 0);
-            cylinder.Animations += () => cylinder.Rotation = new Vector3(Time / 1.7f, Time / 1.9f, Time / 2.1f);
+            cylinder.Animations += () => cylinder.Rotation += new Vector3(0.01f, 0.012f, 0);
             Polyhedrons.Add(cylinder);
         }
     }
