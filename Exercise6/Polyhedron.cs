@@ -8,100 +8,59 @@ namespace Exercise6
     public class Polyhedron
     {
         public readonly Vector3[] Points;
+        public readonly float[] Vertices;
         public readonly int[] Indices;
-
-        public readonly Vector3 Center;
 
         public int VertexArrayObject;
 
-        public Vector3 Color;
-        public Matrix4 Translation = Matrix4.CreateTranslation(Vector3.Zero);
-        public Matrix4 Rotation = Matrix4.Identity;
-        public Matrix4 Scale = Matrix4.CreateScale(1);
+        public Vector3 Color = new(0.2f, 0.5f, 0.1f);
 
-        public List<Animation> Animations = new();
+        public Vector3 Translation;
+        public Vector3 Rotation;
+        public Vector3 Scale = new(1, 1, 1);
 
-        public Polyhedron(Vector3[] points, int[] indices, Vector3 color = default)
+        public event Action Animations;
+
+        public Polyhedron(Vector3[] points, int[] indices)
         {
             Points = points;
+            Vertices = Points.SelectMany(point => new float[3] { point.X, point.Y, point.Z }).ToArray();
             Indices = indices;
-            Center = Points.Aggregate((current, point) => current += point) / Points.Length;
-
-            Color = color == default
-                ? new Vector3(0.2f, 0.5f, 0.1f)
-                : color;
         }
 
-        protected Polyhedron(Shape shape, Vector3 color = default)
-            : this(shape.Points, shape.Indices.ToArray(), color) { }
-
-        //public static Matrix4 GetRotationMatrix(float angle, Vector3 point)
-        //{
-        //    return Matrix4.CreateTranslation(-new Vector3(point))
-        //        * Matrix4.CreateRotationZ(angle)
-        //        * Matrix4.CreateTranslation(new Vector3(point));
-        //}
-
-        public float[] GetVertices()
+        public Polyhedron(Part[] parts)
         {
-            return Points.SelectMany(point => new float[3] { point.X, point.Y, point.Z }).ToArray();
+            var points = new List<Vector3>();
+            var indices = new List<int>();
+            var offset = 0;
+            for (var i = 0; i < parts.Length; i++)
+            {
+                points.AddRange(parts[i].GetPoints(out var count));
+                indices.AddRange(parts[i].GetIndices().Select(index => index + offset));
+                offset += count;
+            }
+
+            Points = points.ToArray();
+            Indices = indices.ToArray();
+            Vertices = Points.SelectMany(point => new float[3] { point.X, point.Y, point.Z }).ToArray();
         }
 
         public Matrix4 GetTransform()
         {
-            var center3D = new Vector3(Center);
-            var transform = Matrix4.CreateTranslation(-center3D);
+            var transform = Matrix4.CreateScale(Scale);
 
-            transform *= Scale;
-            foreach (var animation in Animations.Where(animation => animation.Type == AnimationType.Scale))
-            {
-                transform *= animation.Transformation();
-            }
+            transform *= Matrix4.CreateRotationX(Rotation.X);
+            transform *= Matrix4.CreateRotationY(Rotation.Y);
+            transform *= Matrix4.CreateRotationZ(Rotation.Z);
 
-            transform *= Rotation;
-            foreach (var animation in Animations.Where(animation => animation.Type == AnimationType.Rotation))
-            {
-                transform *= animation.Transformation();
-            }
+            transform *= Matrix4.CreateTranslation(Translation);
 
-            transform *= Translation;
-            foreach (var animation in Animations.Where(animation => animation.Type == AnimationType.Translation))
-            {
-                transform *= animation.Transformation();
-            }
-
-            transform *= Matrix4.CreateTranslation(center3D);
             return transform;
         }
 
-        public void AddAnimation(AnimationType type, Func<Matrix4> tranformation)
+        public void Update()
         {
-            Animations.Add(new Animation { Type = type, Transformation = tranformation });
+            Animations?.Invoke();
         }
-
-        public class Animation
-        {
-            public AnimationType Type;
-            public Func<Matrix4> Transformation;
-        }
-
-        public class Shape
-        {
-            public Vector3[] Points;
-            public List<int> Indices;
-
-            public Shape(int pointCount)
-            {
-                Points = new Vector3[pointCount];
-                Indices = new();
-            }
-        }
-    }
-
-    public enum AnimationType
-    {
-        Translation,
-        Rotation,
-        Scale
     }
 }

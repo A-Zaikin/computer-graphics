@@ -35,9 +35,8 @@ namespace Exercise6
                 var newVertexBufferObject = GL.GenBuffer();
                 GL.BindBuffer(BufferTarget.ArrayBuffer, newVertexBufferObject);
 
-                var vertices = polyhedron.GetVertices();
-                GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float),
-                    vertices, BufferUsageHint.StaticDraw);
+                GL.BufferData(BufferTarget.ArrayBuffer, polyhedron.Vertices.Length * sizeof(float),
+                    polyhedron.Vertices, BufferUsageHint.StaticDraw);
 
                 polyhedron.VertexArrayObject = GL.GenVertexArray();
                 GL.BindVertexArray(polyhedron.VertexArrayObject);
@@ -74,6 +73,7 @@ namespace Exercise6
                 GL.Uniform4(vertexColorLocation, polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
 
                 var modelLocation = GL.GetUniformLocation(_shader.Handle, "model");
+                polyhedron.Update();
                 var model = polyhedron.GetTransform();
                 GL.UniformMatrix4(modelLocation, true, ref model);
 
@@ -88,7 +88,6 @@ namespace Exercise6
                 GL.UniformMatrix4(projectionLocation, true, ref projection);
 
                 GL.BindVertexArray(polyhedron.VertexArrayObject);
-                //GL.DrawArrays(PrimitiveType.Triangles, 0, polyhedron.Points.Length);
                 GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
             }
 
@@ -109,7 +108,6 @@ namespace Exercise6
                 currentPolygonMode = currentPolygonMode switch
                 {
                     PolygonMode.Fill => PolygonMode.Line,
-                    PolygonMode.Line => PolygonMode.Point,
                     _ => PolygonMode.Fill,
                 };
                 GL.PolygonMode(MaterialFace.FrontAndBack, currentPolygonMode);
