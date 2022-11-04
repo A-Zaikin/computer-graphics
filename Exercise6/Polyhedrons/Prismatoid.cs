@@ -8,6 +8,15 @@ namespace Exercise6
     {
         public static Polyhedron Create(Vector2[] smallSurface, Vector2[] bigSurface, float height)
         {
+            //var plane1 = smallSurface.Select(p =>
+            //{
+            //    var point3 = new Vector3(p.X, height / 2, p.Y);
+            //    var rotated = VectorHelper.Rotate(point3.Xy, MathHelper.Pi / 6);
+            //    point3.Xy = rotated;
+            //    return point3;
+            //}).ToArray();
+            //smallSurface = plane1.Select(p => p.Xz).ToArray();
+
             // add connection if a point from one polygon can see a point from other polygon
             var planeConnections = new bool[smallSurface.Length, bigSurface.Length];
             for (var i = 0; i < smallSurface.Length; i++)

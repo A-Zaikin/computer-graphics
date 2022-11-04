@@ -1,43 +1,41 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections;
 
 namespace Exercise6
 {
     public class LoopIndex
     {
-        public readonly IList Array;
         public readonly bool HasLooped;
         public readonly int Value;
 
-        public LoopIndex(IList array, int value = 0)
-        {
-            Array = array;
+        private readonly int length;
 
-            if (value >= Array.Count)
+        public LoopIndex(int length, int value = 0)
+        {
+            this.length = length;
+
+            if (value >= length)
             {
                 HasLooped = true;
             }
-            value %= Array.Count;
+            value %= length;
             if (value < 0)
             {
                 HasLooped = true;
-                value += Array.Count;
+                value += length;
             }
             Value = value;
         }
 
+        public LoopIndex(IList array, int value = 0) : this(array.Count, value) { }
+
         public static LoopIndex operator+(LoopIndex index, int change)
         {
-            return new LoopIndex(index.Array, index.Value + change);
+            return new LoopIndex(index.length, index.Value + change);
         }
 
         public static LoopIndex operator -(LoopIndex index, int change)
         {
-            return new LoopIndex(index.Array, index.Value - change);
+            return new LoopIndex(index.length, index.Value - change);
         }
 
         public static implicit operator int(LoopIndex loopIndex) => loopIndex.Value;

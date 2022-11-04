@@ -36,6 +36,8 @@ namespace Exercise6
 
         private static void CreatePolygons()
         {
+            
+            
             // паралеллепипед
             Polyhedrons.Add(Parallelepiped.Create(1, 2, 3));
             // куб
@@ -63,7 +65,19 @@ namespace Exercise6
                 PolygonHelper.CreateRegular(Vector2.Zero, 0.3f, 30),
                 PolygonHelper.CreateRegular(Vector2.Zero, 1, 50), 3));
 
-            //cylinder.Animations += () => cylinder.Rotation += new Vector3(0.01f, 0.012f, 0);
+            //Polyhedrons.Add(RotationSurface.CreateSphere(3, 50, 50));
+
+            // гайка
+            Polyhedrons.Add(RotationSurface.CreateTorus(2, 0.7f, 4, 3));
+            // шайба
+            Polyhedrons.Add(RotationSurface.CreateTorus(2, 0.7f, 100, 4, MathHelper.Pi / 4));
+            // тор
+            Polyhedrons.Add(RotationSurface.CreateTorus(2, 1, 100, 50));
+
+            // угловая спираль
+            Polyhedrons.Add(RotationSurface.CreateHelix(1.5f, 0.2f, 5, 3, 7, 10));
+            // спираль
+            Polyhedrons.Add(RotationSurface.CreateHelix(1.5f, 0.5f, 50, 50, 5, 3));
         }
     }
 }

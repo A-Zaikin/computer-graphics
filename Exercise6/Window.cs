@@ -69,6 +69,7 @@ namespace Exercise6
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             GL.Enable(EnableCap.CullFace);
+
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.DepthClamp);
             GL.DepthFunc(DepthFunction.Less);

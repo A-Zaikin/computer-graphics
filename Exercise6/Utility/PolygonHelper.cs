@@ -56,8 +56,6 @@ namespace Exercise6
             return indices;
         }
 
-
-
         public static bool IsPointInTriangle(Vector2 pt, Vector2 v1, Vector2 v2, Vector2 v3)
         {
             if (pt == v1 || pt == v2 || pt == v3)
@@ -79,6 +77,19 @@ namespace Exercise6
             {
                 return (p1.X - p3.X) * (p2.Y - p3.Y) - (p2.X - p3.X) * (p1.Y - p3.Y);
             }
+        }
+
+        public static void SortPoints(Vector2[] points)
+        {
+            var center = points.Aggregate((a, b) => a + b) / points.Length;
+            Array.Sort(points, (p1, p2) =>
+            {
+                var vector1 = p1 - center;
+                var angle1 = (MathF.Atan2(vector1.X, vector1.Y) + MathF.PI * 2) % (MathF.PI * 2);
+                var vector2 = p1 - center;
+                var angle2 = (MathF.Atan2(vector2.X, vector2.Y) + MathF.PI * 2) % (MathF.PI * 2);
+                return angle1.CompareTo(angle2);
+            });
         }
     }
 }
