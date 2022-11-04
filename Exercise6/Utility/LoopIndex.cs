@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,23 +9,23 @@ namespace Exercise6
 {
     public class LoopIndex
     {
-        public readonly Array Array;
+        public readonly IList Array;
         public readonly bool HasLooped;
         public readonly int Value;
 
-        public LoopIndex(Array array, int value = 0)
+        public LoopIndex(IList array, int value = 0)
         {
             Array = array;
 
-            if (value >= Array.Length)
+            if (value >= Array.Count)
             {
                 HasLooped = true;
             }
-            value %= Array.Length;
+            value %= Array.Count;
             if (value < 0)
             {
                 HasLooped = true;
-                value += Array.Length;
+                value += Array.Count;
             }
             Value = value;
         }

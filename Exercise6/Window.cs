@@ -15,7 +15,7 @@ namespace Exercise6
         private Shader _shader;
         private PolygonMode currentPolygonMode;
 
-        private Vector2 globalRotation;
+        private Vector3 globalRotation;
         private float rotationSpeed = 1f;
         private bool manualRotation = true;
 
@@ -37,7 +37,7 @@ namespace Exercise6
 
         private void LoadPolyhedrons()
         {
-            foreach (var polyhedron in Program.Polyhedrons)
+            foreach(var polyhedron in Program.Polyhedrons)
             {
                 var newVertexBufferObject = GL.GenBuffer();
                 GL.BindBuffer(BufferTarget.ArrayBuffer, newVertexBufferObject);
@@ -79,19 +79,17 @@ namespace Exercise6
             var viewLocation = GL.GetUniformLocation(_shader.Handle, "view");
             var projectionLocation = GL.GetUniformLocation(_shader.Handle, "projection");
 
-            foreach (var polyhedron in Program.Polyhedrons)
-            {
-                GL.Uniform4(vertexColorLocation, polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
+            var polyhedron = Program.Polyhedrons[Program.CurrentIndex];
+            GL.Uniform4(vertexColorLocation, polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
 
-                var model = polyhedron.GetTransform();
+            var model = polyhedron.GetTransform();
 
-                GL.UniformMatrix4(modelLocation, true, ref model);
-                GL.UniformMatrix4(viewLocation, true, ref view);
-                GL.UniformMatrix4(projectionLocation, true, ref projection);
+            GL.UniformMatrix4(modelLocation, true, ref model);
+            GL.UniformMatrix4(viewLocation, true, ref view);
+            GL.UniformMatrix4(projectionLocation, true, ref projection);
 
-                GL.BindVertexArray(polyhedron.VertexArrayObject);
-                GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
-            }
+            GL.BindVertexArray(polyhedron.VertexArrayObject);
+            GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
 
             SwapBuffers();
         }
@@ -116,12 +114,23 @@ namespace Exercise6
                 GL.PolygonMode(MaterialFace.FrontAndBack, currentPolygonMode);
             }
 
+            if (input.IsKeyPressed(Keys.Right))
+            {
+                Program.CurrentIndex += 1;
+                Program.Polyhedrons[Program.CurrentIndex].Rotation = Vector3.Zero;
+            }
+            if (input.IsKeyPressed(Keys.Left))
+            {
+                Program.CurrentIndex -= 1;
+                Program.Polyhedrons[Program.CurrentIndex].Rotation = Vector3.Zero;
+            }
+
             if (input.IsKeyPressed(Keys.Space))
             {
                 manualRotation = !manualRotation;
             }
 
-            globalRotation = Vector2.Zero;
+            globalRotation = Vector3.Zero;
             if (input.IsKeyDown(Keys.W))
                 globalRotation.X = rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.S))
@@ -130,16 +139,20 @@ namespace Exercise6
                 globalRotation.Y = -rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.D))
                 globalRotation.Y = rotationSpeed * (float)e.Time;
-            foreach (var polyhedron in Program.Polyhedrons)
+            if (input.IsKeyDown(Keys.Q))
+                globalRotation.Z = -rotationSpeed * (float)e.Time;
+            if (input.IsKeyDown(Keys.E))
+                globalRotation.Z = rotationSpeed * (float)e.Time;
+
+            var polyhedron = Program.Polyhedrons[Program.CurrentIndex];
+            if (manualRotation)
             {
-                if (manualRotation)
-                {
-                    polyhedron.Rotation += new Vector3(globalRotation.X, globalRotation.Y, 0);
-                }
-                else
-                {
-                    polyhedron.Update();
-                }
+                polyhedron.Rotation += globalRotation;
+            }
+            else
+            {
+                //polyhedron.Update();
+                polyhedron.Rotation += new Vector3(0.6f, 0.46f, 0.1f) * (float)e.Time;
             }
         }
 

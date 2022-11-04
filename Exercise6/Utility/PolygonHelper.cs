@@ -55,5 +55,30 @@ namespace Exercise6
             }
             return indices;
         }
+
+
+
+        public static bool IsPointInTriangle(Vector2 pt, Vector2 v1, Vector2 v2, Vector2 v3)
+        {
+            if (pt == v1 || pt == v2 || pt == v3)
+            {
+                return false;
+            }
+
+            var d1 = Sign(pt, v1, v2);
+            var d2 = Sign(pt, v2, v3);
+            var d3 = Sign(pt, v3, v1);
+
+            var hasNegative = (d1 < 0) || (d2 < 0) || (d3 < 0);
+            var hasPositive = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+            return !(hasNegative && hasPositive);
+
+
+            static float Sign(Vector2 p1, Vector2 p2, Vector2 p3)
+            {
+                return (p1.X - p3.X) * (p2.Y - p3.Y) - (p2.X - p3.X) * (p1.Y - p3.Y);
+            }
+        }
     }
 }

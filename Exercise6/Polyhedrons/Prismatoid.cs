@@ -6,9 +6,9 @@ namespace Exercise6
 {
     public static class Prismatoid
     {
-        public static Polyhedron Create(Vector2[] smallSurface, Vector2[] bigSurface, float height = 1)
+        public static Polyhedron Create(Vector2[] smallSurface, Vector2[] bigSurface, float height)
         {
-            // add connection if point from one polygon can "see" a point from other polygon
+            // add connection if a point from one polygon can see a point from other polygon
             var planeConnections = new bool[smallSurface.Length, bigSurface.Length];
             for (var i = 0; i < smallSurface.Length; i++)
             {
@@ -34,6 +34,13 @@ namespace Exercise6
                         && planeConnectionsCopy[i, j + 1]
                         && planeConnectionsCopy[i + 1, j + 1])
                     {
+                        var side1 = smallSurface[i + 1] - smallSurface[i];
+                        var side2 = bigSurface[j + 1] - bigSurface[j];
+                        if (Vector2.Dot(side1, side2) < 0)
+                        {
+                            continue;
+                        }
+
                         var distance1 = VectorHelper.Distance(smallSurface[i],
                             bigSurface[j + 1], smallSurface[i + 1]);
                         var distance2 = VectorHelper.Distance(smallSurface[i + 1],
@@ -62,11 +69,20 @@ namespace Exercise6
                 {
                     if (planeConnections[i, j] && planeConnections[i, j + 1])
                     {
-                        sideIndices.AddRange(new int[] { i, plane1.Length + j.Value, plane1.Length + (j + 1).Value });
+                        if (!smallSurface.Any(point => PolygonHelper.IsPointInTriangle(point,
+                                smallSurface[i], bigSurface[j], bigSurface[j + 1])))
+                        {
+                            sideIndices.AddRange(new int[] { i, plane1.Length + j.Value,
+                                plane1.Length + (j + 1).Value });
+                        }
                     }
                     if (planeConnections[i, j] && planeConnections[i + 1, j])
                     {
-                        sideIndices.AddRange(new int[] { plane1.Length + j.Value, i + 1, i });
+                        if (!smallSurface.Any(point => PolygonHelper.IsPointInTriangle(point,
+                                bigSurface[j], smallSurface[i], smallSurface[i + 1])))
+                        {
+                            sideIndices.AddRange(new int[] { plane1.Length + j.Value, i + 1, i });
+                        }
                     }
                 }
             }
@@ -77,22 +93,6 @@ namespace Exercise6
                     .Select(index => index + plane1.Length))
                 .Concat(sideIndices)
                 .ToArray();
-            return new Polyhedron(points, indices);
-        }
-
-        public static Polyhedron Create(Vector2 apex, Vector2[] surface, float height = 1)
-        {
-            var plane = surface.Select(p => new Vector3(p.X, -height / 2, p.Y)).ToArray();
-            List<int> sideIndices = new();
-
-            // add indicies of connected points
-            for (LoopIndex i = new(plane); !i.HasLooped; i += 1)
-            {
-                sideIndices.AddRange(new int[] { 0, i, i + 1 });
-            }
-
-            var points = plane.Prepend(new Vector3(apex.X, height / 2, apex.Y)).ToArray();
-            var indices = PolygonHelper.TriangulateIndices(plane).Concat(sideIndices).ToArray();
             return new Polyhedron(points, indices);
         }
     }
