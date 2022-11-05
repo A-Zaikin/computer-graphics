@@ -7,10 +7,11 @@ uniform mat4 projection;
 
 out float zDistance;
 out vec3 color;
+out vec3 viewPosition;
 
 void main()
 {
     gl_Position = vec4(aPosition, 1.0) * model * view * projection;
-    zDistance = gl_Position.z;
     color = (aPosition + vec3(1, 1, 1)) / 2;
+    viewPosition = gl_Position.xyz;
 }

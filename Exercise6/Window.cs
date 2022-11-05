@@ -19,6 +19,8 @@ namespace Exercise6
         private float rotationSpeed = 1f;
         private bool manualRotation = true;
 
+        private bool areShadowsEnabled = true;
+
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
         {
@@ -79,6 +81,7 @@ namespace Exercise6
             var modelLocation = GL.GetUniformLocation(_shader.Handle, "model");
             var viewLocation = GL.GetUniformLocation(_shader.Handle, "view");
             var projectionLocation = GL.GetUniformLocation(_shader.Handle, "projection");
+            var shadowsLocation = GL.GetUniformLocation(_shader.Handle, "shadows");
 
             var polyhedron = Program.Polyhedrons[Program.CurrentIndex];
             GL.Uniform4(vertexColorLocation, polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
@@ -88,6 +91,7 @@ namespace Exercise6
             GL.UniformMatrix4(modelLocation, true, ref model);
             GL.UniformMatrix4(viewLocation, true, ref view);
             GL.UniformMatrix4(projectionLocation, true, ref projection);
+            GL.Uniform1(shadowsLocation, areShadowsEnabled ? 1 : 0);
 
             GL.BindVertexArray(polyhedron.VertexArrayObject);
             GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
@@ -105,7 +109,7 @@ namespace Exercise6
                 Close();
             }
 
-            if (input.IsKeyPressed(Keys.P))
+            if (input.IsKeyPressed(Keys.R))
             {
                 currentPolygonMode = currentPolygonMode switch
                 {
@@ -113,6 +117,11 @@ namespace Exercise6
                     _ => PolygonMode.Fill,
                 };
                 GL.PolygonMode(MaterialFace.FrontAndBack, currentPolygonMode);
+            }
+
+            if (input.IsKeyPressed(Keys.F))
+            {
+                areShadowsEnabled = !areShadowsEnabled;
             }
 
             if (input.IsKeyPressed(Keys.Right))
