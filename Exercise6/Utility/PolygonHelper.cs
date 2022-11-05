@@ -1,5 +1,6 @@
 ﻿using OpenTK.Mathematics;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -39,10 +40,10 @@ namespace Exercise6
             return points.SelectMany(point => new float[3] { point.X, point.Y, point.Z }).ToArray();
         }
 
-        public static IEnumerable<int> TriangulateIndices(Vector3[] points, bool reverse = false)
+        public static IEnumerable<int> Triangulate(int length, bool reverse = false)
         {
             List<int> indices = new();
-            for (LoopIndex i = new(points, 1); i < points.Length - 1; i += 1)
+            for (LoopIndex i = new(length, 1); i < length - 1; i += 1)
             {
                 if (reverse)
                 {
@@ -54,6 +55,11 @@ namespace Exercise6
                 }
             }
             return indices;
+        }
+
+        public static IEnumerable<int> Triangulate(IList list, bool reverse = false)
+        {
+            return Triangulate(list.Count, reverse);
         }
 
         public static bool IsPointInTriangle(Vector2 pt, Vector2 v1, Vector2 v2, Vector2 v3)
@@ -79,7 +85,7 @@ namespace Exercise6
             }
         }
 
-        public static void SortPoints(Vector2[] points)
+        public static void Sort(Vector2[] points)
         {
             var center = points.Aggregate((a, b) => a + b) / points.Length;
             Array.Sort(points, (p1, p2) =>
@@ -90,6 +96,27 @@ namespace Exercise6
                 var angle2 = (MathF.Atan2(vector2.X, vector2.Y) + MathF.PI * 2) % (MathF.PI * 2);
                 return angle1.CompareTo(angle2);
             });
+        }
+
+        public static void SortIndices(Vector3[] allPoints, int[] indices)
+        {
+            var center = indices.Select(i => allPoints[i]).Aggregate((a, b) => a + b);
+            var normal = center;
+            var p = Vector3.MagnitudeMax(
+                Vector3.Cross(Vector3.UnitX, normal),
+                Vector3.MagnitudeMax(
+                    Vector3.Cross(Vector3.UnitY, normal),
+                    Vector3.Cross(Vector3.UnitZ, normal)));
+            var q = Vector3.Cross(normal, p);
+            Array.Sort(indices, (i1, i2) => ComputeAngle(allPoints[i1]).CompareTo(ComputeAngle(allPoints[i2])));
+
+
+            float ComputeAngle(Vector3 point)
+            {
+                var t = Vector3.Dot(normal, Vector3.Cross(point - center, p));
+                var u = Vector3.Dot(normal, Vector3.Cross(point - center, q));
+                return MathF.Atan2(u, t);
+            }
         }
     }
 }

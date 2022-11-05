@@ -17,7 +17,7 @@ namespace Exercise6
 
         private static void Main()
         {
-            CreatePolygons();
+            CreatePolyhedrons();
             CurrentIndex = new LoopIndex(Polyhedrons);
 
             timer.Start();
@@ -34,10 +34,15 @@ namespace Exercise6
             window.Dispose();
         }
 
-        private static void CreatePolygons()
+        private static void CreatePolyhedrons()
         {
-            
-            
+            CreatePrismatoids();
+            CreateSurfacesOfRotation();
+            CreatePlatonicSolids();
+        }
+
+        private static void CreatePrismatoids()
+        {
             // паралеллепипед
             Polyhedrons.Add(Parallelepiped.Create(1, 2, 3));
             // куб
@@ -62,11 +67,12 @@ namespace Exercise6
                 PolygonHelper.CreateRegular(Vector2.Zero, 1, 50), 3));
             // цилиндр (общий)
             Polyhedrons.Add(Prismatoid.Create(
-                PolygonHelper.CreateRegular(Vector2.Zero, 0.3f, 30),
-                PolygonHelper.CreateRegular(Vector2.Zero, 1, 50), 3));
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.5f, 30),
+                PolygonHelper.CreateRegular(Vector2.Zero, 2, 50), 4));
+        }
 
-            //Polyhedrons.Add(RotationSurface.CreateSphere(3, 50, 50));
-
+        private static void CreateSurfacesOfRotation()
+        {
             // гайка
             Polyhedrons.Add(RotationSurface.CreateTorus(2, 0.7f, 4, 3));
             // шайба
@@ -78,6 +84,21 @@ namespace Exercise6
             Polyhedrons.Add(RotationSurface.CreateHelix(1.5f, 0.2f, 5, 3, 7, 10));
             // спираль
             Polyhedrons.Add(RotationSurface.CreateHelix(1.5f, 0.5f, 50, 50, 5, 3));
+
+            // сферы
+            Polyhedrons.Add(RotationSurface.CreateSphere(2, 4, 2));
+            Polyhedrons.Add(RotationSurface.CreateSphere(2, 7, 3));
+            Polyhedrons.Add(RotationSurface.CreateSphere(2, 10, 10));
+            Polyhedrons.Add(RotationSurface.CreateSphere(2, 100, 100));
+        }
+
+        private static void CreatePlatonicSolids()
+        {
+            Polyhedrons.Add(PlatonicSolids.CreateTetrahedron(2));
+            Polyhedrons.Add(PlatonicSolids.CreateHexahedron(2.5f));
+            Polyhedrons.Add(PlatonicSolids.CreateOctahedron(2));
+            Polyhedrons.Add(PlatonicSolids.CreateDodecahedron(1));
+            Polyhedrons.Add(PlatonicSolids.CreateIcosahedron(1));
         }
     }
 }

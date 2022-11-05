@@ -10,15 +10,14 @@ namespace Exercise6
     public static class RotationSurface
     {
         public static Polyhedron CreateTorus(float radius, float thickness,
-            int sectionCount, int sectionVertexCount, float offsetAngle = 0, float sectorAngle = MathHelper.Pi * 2)
+            int sectionCount, int sectionVertexCount, float offsetAngle = 0)
         {
-            sectionCount = (int)MathHelper.Round(sectionCount * MathHelper.Pi * 2 / sectorAngle);
             var points = new Vector3[sectionVertexCount * sectionCount];
             List<int> indices = new();
 
             for (LoopIndex i = new(sectionCount); !i.HasLooped; i += 1)
             {
-                var angle = sectorAngle * -i / sectionCount;
+                var angle = MathHelper.Pi * 2 * -i / sectionCount;
                 for (LoopIndex j = new(sectionVertexCount); !j.HasLooped; j += 1)
                 {
                     var pointPosition = new Vector3(
@@ -74,16 +73,53 @@ namespace Exercise6
             }
 
             var totalIndices = indices
-                .Concat(PolygonHelper.TriangulateIndices(polygon))
-                .Concat(PolygonHelper.TriangulateIndices(polygon, true)
+                .Concat(PolygonHelper.Triangulate(polygon))
+                .Concat(PolygonHelper.Triangulate(polygon, true)
                     .Select(i => i + (sectionCount - 1) * sectionVertexCount))
                 .ToArray();
             return new Polyhedron(points, totalIndices);
         }
 
-        public static Polyhedron CreateSphere(float radius, int sectionCount, int sectionVertexCount)
+        public static Polyhedron CreateSphere(float radius, int sectionCount, int sideVertexCount)
         {
-            return CreateTorus(0, radius, sectionCount, sectionVertexCount, sectorAngle: MathHelper.Pi);
+            var points = new Vector3[sideVertexCount * sectionCount + 2];
+            List<int> indices = new();
+
+            points[0] = Vector3.UnitY * radius;
+            points[1] = -Vector3.UnitY * radius;
+            for (LoopIndex i = new(sectionCount); !i.HasLooped; i += 1)
+            {
+                var angle = MathF.PI * 2 * -i / sectionCount;
+                for (var j = 0; j < sideVertexCount; j += 1)
+                {
+                    var pointPosition = new Vector3(
+                        radius * MathF.Cos(MathF.PI / 2 + MathF.PI * -(j + 1) / (sideVertexCount + 1)),
+                        radius * MathF.Sin(MathF.PI / 2 + MathF.PI * -(j + 1) / (sideVertexCount + 1)), 0);
+
+                    pointPosition.Xz = VectorHelper.Rotate(pointPosition.Xz, -angle);
+                    points[i * sideVertexCount + j + 2] = pointPosition;
+
+                    if (j == 0)
+                    {
+                        indices.AddRange(new int[] { (i - 1) * sideVertexCount + j,
+                            -2, i * sideVertexCount + j });
+                    }
+
+                    if (j == sideVertexCount - 1)
+                    {
+                        indices.AddRange(new int[] { (i - 1) * sideVertexCount + j,
+                            i * sideVertexCount + j, -1 });
+                    }
+                    else
+                    {
+                        indices.AddRange(new int[] { (i - 1) * sideVertexCount + j,
+                            i * sideVertexCount + j, i * sideVertexCount + j + 1 });
+                        indices.AddRange(new int[] { (i - 1) * sideVertexCount + j,
+                            i * sideVertexCount + j + 1, (i - 1) * sideVertexCount + j + 1 });
+                    }
+                }
+            }
+            return new Polyhedron(points, indices.Select(i => i + 2).ToArray());
         }
     }
 }

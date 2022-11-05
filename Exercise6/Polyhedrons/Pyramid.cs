@@ -18,7 +18,7 @@ namespace Exercise6
             }
 
             var points = plane.Prepend(new Vector3(apex.X, height / 2, apex.Y)).ToArray();
-            var indices = PolygonHelper.TriangulateIndices(plane, true)
+            var indices = PolygonHelper.Triangulate(plane, true)
                 .Select(index => index + 1)
                 .Concat(sideIndices).ToArray();
             return new Polyhedron(points, indices);

@@ -97,8 +97,8 @@ namespace Exercise6
             }
 
             var points = plane1.Concat(plane2).ToArray();
-            var indices = PolygonHelper.TriangulateIndices(plane1)
-                .Concat(PolygonHelper.TriangulateIndices(plane2, true)
+            var indices = PolygonHelper.Triangulate(plane1)
+                .Concat(PolygonHelper.Triangulate(plane2, true)
                     .Select(index => index + plane1.Length))
                 .Concat(sideIndices)
                 .ToArray();

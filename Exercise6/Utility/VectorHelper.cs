@@ -1,6 +1,7 @@
 ﻿using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Exercise6
 {
@@ -36,7 +37,7 @@ namespace Exercise6
             return new Vector3(MathHelper.Abs(vector.X), MathHelper.Abs(vector.Y), MathHelper.Abs(vector.Z));
         }
 
-        public static IEnumerable<Vector3> MirrorOrthogonally(Vector3 point, Vector3 translate)
+        public static IEnumerable<Vector3> MirrorOrthogonally(Vector3 point, Vector3 translate, float scale = 1)
         {
             point = Abs(point);
             List<Vector3> points = new();
@@ -44,7 +45,7 @@ namespace Exercise6
                 for (var y = -1; y < MathHelper.Sign(point.Y) * 2; y += 2)
                     for (var z = -1; z < MathHelper.Sign(point.Z) * 2; z += 2)
                         points.Add(new Vector3(point.X * x, point.Y * y, point.Z * z) + translate);
-            return points;
+            return points.Select(p => p * scale);
         }
     }
 }
