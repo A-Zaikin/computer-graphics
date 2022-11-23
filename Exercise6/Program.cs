@@ -71,7 +71,7 @@ namespace Exercise6
             // конус
             AddPolyhedron(ComplexShape.CreateCylinder(100, 0, 2f, 4, round: true));
             // цилиндр (правильный)
-            AddPolyhedron(ComplexShape.CreateCylinder(100, 1.5f, 1.5f, 4, round: true));
+            AddPolyhedron(ComplexShape.CreateCylinder(50, 1.5f, 1.5f, 4, round: true));
             // цилиндр (общий)
             AddPolyhedron(ComplexShape.CreateCylinder(100, 0.5f, 2f, 5, round: true));
         }

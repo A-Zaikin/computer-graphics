@@ -66,36 +66,6 @@ namespace Exercise6
             };
         }
 
-        public static Polyhedron[] CreatePyramid(Vector2[] surface, float height,
-            Vector2 apex = default, bool round = false)
-        {
-            var plane = surface.Select(p => new Vector3(p.X, -height / 2, p.Y)).ToArray();
-            List<int> sideIndices = new();
-            var normals = new Vector3[plane.Length];
-
-            var coneAngle = MathF.Atan(plane[0].Length / height);
-
-            // add indicies of connected points
-            for (LoopIndex i = new(plane); !i.HasLooped; i += 1)
-            {
-                sideIndices.AddRange(new int[] { 0, i.Value + 1, (i + 1).Value + 1 });
-                var flatNormal = plane[i].Normalized();
-                flatNormal.Y *= MathF.Sin(coneAngle);
-                flatNormal.Xz *= MathF.Cos(coneAngle);
-                normals[i] = flatNormal.Normalized();
-            }
-
-            var points = plane.Prepend(new Vector3(apex.X, height / 2, apex.Y)).ToArray();
-            normals = normals.Prepend(Vector3.UnitY).ToArray();
-
-
-            return new Polyhedron[2]
-            {
-                new Polyhedron(plane, PolygonHelper.Triangulate(plane, true).ToArray(), null, false),
-                new Polyhedron(points, sideIndices.ToArray(), normals, round),
-            };
-        }
-
         public static Polyhedron[] CreateCylinder(int vertexCount, float topRadius, float bottomRadius,
             float height, bool round = false)
         {
@@ -111,9 +81,12 @@ namespace Exercise6
 
             for (var i = 0; i < vertexCount; i++)
             {
-                var normal = bottomRadius == topRadius
-                    ? bottomPlane[i].Normalized()
-                    : bottomPlane[i].Normalized() * MathF.Cos(coneAngle) + Vector3.UnitY * MathF.Sin(coneAngle);
+                var normal = bottomPlane[i].Normalized(); 
+                if (bottomRadius != topRadius)
+                {
+                    normal *= MathF.Cos(coneAngle);
+                    normal += Vector3.UnitY * MathF.Sin(coneAngle);
+                }
                 normals[i] = normal;
                 normals[i + vertexCount] = normal;
             }
@@ -121,10 +94,10 @@ namespace Exercise6
             for (LoopIndex i = new(vertexCount); !i.HasLooped; i += 1)
             {
                 indices.AddRange(new int[] { i - 1, vertexCount + i, i });
-                indices.AddRange(new int[] { vertexCount + (i - 1), vertexCount + i, i - 1 });
+                indices.AddRange(new int[] { vertexCount + i, i - 1, vertexCount + (i - 1) });
             }
 
-            for(var i = 0; i < vertexCount; i++)
+            for (var i = 0; i < vertexCount; i++)
             {
                 topPlane[i].Y = height / 2;
                 bottomPlane[i].Y = -height / 2;
