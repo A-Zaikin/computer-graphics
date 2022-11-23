@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Exercise6
 {
-    public static class PlatonicSolids
+    public static class PlatonicSolid
     {
         public static Polyhedron CreateTetrahedron(float scale)
         {
@@ -29,7 +29,7 @@ namespace Exercise6
 
         public static Polyhedron CreateHexahedron(float scale)
         {
-            return Parallelepiped.Create(scale, scale, scale);
+            return Prismatoid.CreateParallelepiped(scale, scale, scale);
         }
 
         public static Polyhedron CreateOctahedron(float scale)

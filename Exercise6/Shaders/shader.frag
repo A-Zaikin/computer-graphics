@@ -1,8 +1,9 @@
 ﻿#version 330 core
 out vec4 FragColor;
 
-uniform vec4 customColor;
+uniform vec3 customColor;
 uniform int flatMode;
+uniform int polyMode;
 uniform vec3 cameraPos;
 
 in float zDistance;
@@ -12,11 +13,11 @@ in vec3 vertexNormal;
 
 void main()
 {
-    vec3 normal = flatMode == 1
+    vec3 normal = flatMode == 1 && polyMode == 1
         ? normalize(cross(dFdx(fragPos), dFdy(fragPos)))
         : vertexNormal;
 
-    vec3 light = vec3(-3, 2, 10);
+    vec3 light = vec3(3, 2, -10);
     vec3 lightColor = vec3(1, 1, 1);
     vec3 lightDirection = normalize(light - fragPos);
     float intensity = max(dot(normal, lightDirection), 0);
@@ -36,6 +37,6 @@ void main()
 //        FragColor = vec4(color, 1);
 //    }
 
-    vec3 objectColor = vec3(0.9, 0.1, 0.2);
-    FragColor = vec4((ambient + diffuse + specular) * objectColor, 1);
+    //vec3 objectColor = vec3(0.9, 0.1, 0.2);
+    FragColor = vec4((ambient + diffuse + specular) * color, 1);
 }

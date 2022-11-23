@@ -6,17 +6,8 @@ namespace Exercise6
 {
     public static class Prismatoid
     {
-        public static Polyhedron Create(Vector2[] smallSurface, Vector2[] bigSurface, float height)
+        public static Polyhedron CreateGeneral(Vector2[] smallSurface, Vector2[] bigSurface, float height)
         {
-            //var plane1 = smallSurface.Select(p =>
-            //{
-            //    var point3 = new Vector3(p.X, height / 2, p.Y);
-            //    var rotated = VectorHelper.Rotate(point3.Xy, MathHelper.Pi / 6);
-            //    point3.Xy = rotated;
-            //    return point3;
-            //}).ToArray();
-            //smallSurface = plane1.Select(p => p.Xz).ToArray();
-
             // add connection if a point from one polygon can see a point from other polygon
             var planeConnections = new bool[smallSurface.Length, bigSurface.Length];
             for (var i = 0; i < smallSurface.Length; i++)
@@ -103,6 +94,42 @@ namespace Exercise6
                 .Concat(sideIndices)
                 .ToArray();
             return new Polyhedron(points, indices);
+        }
+
+        public static Polyhedron CreatePyramid(Vector2[] surface, float height, Vector2 apex = default)
+        {
+            var plane = surface.Select(p => new Vector3(p.X, -height / 2, p.Y)).ToArray();
+            List<int> sideIndices = new();
+
+            // add indicies of connected points
+            for (LoopIndex i = new(plane); !i.HasLooped; i += 1)
+            {
+                sideIndices.AddRange(new int[] { 0, i.Value + 1, (i + 1).Value + 1 });
+            }
+
+            var points = plane.Prepend(new Vector3(apex.X, height / 2, apex.Y)).ToArray();
+            var indices = PolygonHelper.Triangulate(plane, true)
+                .Select(index => index + 1)
+                .Concat(sideIndices).ToArray();
+            return new Polyhedron(points, indices);
+        }
+
+        public static Polyhedron CreateParallelepiped(float widthX, float widthZ, float height,
+            Vector2 topOffset = default)
+        {
+            var plane1 = new Vector2[]
+            {
+                new Vector2(-widthX / 2, -widthZ / 2),
+                new Vector2(-widthX / 2, widthZ / 2),
+                new Vector2(widthX / 2, widthZ / 2),
+                new Vector2(widthX / 2, -widthZ / 2),
+            };
+            var plane2 = plane1.Clone() as Vector2[];
+            if (topOffset != default)
+            {
+                plane1 = plane1.Select(vertex => vertex + topOffset).ToArray();
+            }
+            return CreateGeneral(plane1, plane2, height);
         }
     }
 }

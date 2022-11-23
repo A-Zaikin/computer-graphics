@@ -1,6 +1,7 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -8,10 +9,11 @@ namespace Exercise6
 {
     public static class Program
     {
-        public static List<Polyhedron> Polyhedrons = new();
+        public static List<Polyhedron[]> Polyhedrons = new();
         public static LoopIndex CurrentIndex;
         private static Stopwatch timer = new();
         private static Window window;
+        private static Random random = new();
 
         public static float Time => timer.ElapsedMilliseconds / 1000f;
 
@@ -48,61 +50,72 @@ namespace Exercise6
         private static void CreatePrismatoids()
         {
             // паралеллепипед
-            Polyhedrons.Add(Parallelepiped.Create(1, 2, 3));
+            AddPolyhedron(Prismatoid.CreateParallelepiped(1, 2, 3));
+            // паралеллепипед (косой)
+            AddPolyhedron(Prismatoid.CreateParallelepiped(1, 2, 3, new Vector2(0.5f, -0.8f)));
             // куб
-            Polyhedrons.Add(Parallelepiped.Create(2, 2, 2));
+            AddPolyhedron(Prismatoid.CreateParallelepiped(2, 2, 2));
             // пирамида
-            Polyhedrons.Add(Pyramid.Create(PolygonHelper.CreateRegular(Vector2.Zero, 2, 4), 3));
+            AddPolyhedron(Prismatoid.CreatePyramid(PolygonHelper.CreateRegular(Vector2.Zero, 2, 4), 3));
             // усечённая пирамида
-            Polyhedrons.Add(Prismatoid.Create(
+            AddPolyhedron(Prismatoid.CreateGeneral(
                 PolygonHelper.CreateRegular(Vector2.Zero, 1, 3),
                 PolygonHelper.CreateRegular(Vector2.Zero, 2, 3), 2));
             // пирамида, основанием у которой служит правильный многоугольник
-            Polyhedrons.Add(Pyramid.Create(PolygonHelper.CreateRegular(Vector2.Zero, 2, 7), 3));
+            AddPolyhedron(Prismatoid.CreatePyramid(PolygonHelper.CreateRegular(Vector2.Zero, 2, 7), 3));
             // усечённая пирамида из правильных многоугольников
-            Polyhedrons.Add(Prismatoid.Create(
+            AddPolyhedron(Prismatoid.CreateGeneral(
                 PolygonHelper.CreateRegular(Vector2.Zero, 1, 5),
                 PolygonHelper.CreateRegular(Vector2.Zero, 2, 9), 2));
+
             // конус
-            Polyhedrons.Add(Pyramid.Create(PolygonHelper.CreateRegular(Vector2.Zero, 2, 50), 3));
+            AddPolyhedron(ComplexShape.CreateCylinder(100, 0, 2f, 4, round: true));
             // цилиндр (правильный)
-            Polyhedrons.Add(Prismatoid.Create(
-                PolygonHelper.CreateRegular(Vector2.Zero, 1, 50),
-                PolygonHelper.CreateRegular(Vector2.Zero, 1, 50), 3));
+            AddPolyhedron(ComplexShape.CreateCylinder(100, 1.5f, 1.5f, 4, round: true));
             // цилиндр (общий)
-            Polyhedrons.Add(Prismatoid.Create(
-                PolygonHelper.CreateRegular(Vector2.Zero, 0.5f, 30),
-                PolygonHelper.CreateRegular(Vector2.Zero, 2, 50), 4));
+            AddPolyhedron(ComplexShape.CreateCylinder(100, 0.5f, 2f, 5, round: true));
         }
 
         private static void CreateSurfacesOfRotation()
         {
             // гайка
-            Polyhedrons.Add(RotationSurfaces.CreateTorus(2, 0.7f, 4, 3));
+            AddPolyhedron(RotationSurfaces.CreateTorus(2, 0.7f, 4, 3));
             // шайба
-            Polyhedrons.Add(RotationSurfaces.CreateTorus(2, 0.7f, 100, 4, MathHelper.Pi / 4));
+            AddPolyhedron(RotationSurfaces.CreateTorus(2, 0.7f, 10, 4, MathHelper.Pi / 4));
             // тор
-            Polyhedrons.Add(RotationSurfaces.CreateTorus(2, 1, 100, 50));
+            AddPolyhedron(RotationSurfaces.CreateTorus(2, 1, 100, 50, round: true));
 
             // угловая спираль
-            Polyhedrons.Add(RotationSurfaces.CreateHelix(1.5f, 0.2f, 5, 3, 7, 10));
+            AddPolyhedron(ComplexShape.CreateHelix(1.5f, 0.2f, 5, 3, 7, 10));
             // спираль
-            Polyhedrons.Add(RotationSurfaces.CreateHelix(1.5f, 0.5f, 50, 50, 5, 3));
+            AddPolyhedron(ComplexShape.CreateHelix(1.5f, 0.5f, 50, 35, 5, 3, round: true));
 
             // сферы
-            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 4, 2));
-            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 7, 3));
-            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 10, 10));
-            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 100, 100));
+            AddPolyhedron(RotationSurfaces.CreateSphere(2, 25, 15));
+            AddPolyhedron(RotationSurfaces.CreateSphereFromTriangles(2));
+            AddPolyhedron(RotationSurfaces.CreateSphere(2, 100, 100));
         }
 
         private static void CreatePlatonicSolids()
         {
-            Polyhedrons.Add(PlatonicSolids.CreateTetrahedron(2));
-            Polyhedrons.Add(PlatonicSolids.CreateHexahedron(2.5f));
-            Polyhedrons.Add(PlatonicSolids.CreateOctahedron(2));
-            Polyhedrons.Add(PlatonicSolids.CreateDodecahedron(1));
-            Polyhedrons.Add(PlatonicSolids.CreateIcosahedron(1));
+            AddPolyhedron(PlatonicSolid.CreateTetrahedron(2));
+            AddPolyhedron(PlatonicSolid.CreateHexahedron(2.5f));
+            AddPolyhedron(PlatonicSolid.CreateOctahedron(2));
+            AddPolyhedron(PlatonicSolid.CreateDodecahedron(1));
+            AddPolyhedron(PlatonicSolid.CreateIcosahedron(1));
+        }
+
+        private static void AddPolyhedron(params Polyhedron[] shape)
+        {
+            Polyhedrons.Add(shape);
+            var randomColor = new Vector3(
+                (float)random.NextDouble(),
+                (float)random.NextDouble(),
+                (float)random.NextDouble());
+            foreach(var poly in shape)
+            {
+                poly.Color = randomColor.Normalized();
+            }
         }
     }
 }

@@ -3,12 +3,13 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
+using System.Linq;
 
 namespace Exercise6
 {
     public class Window : GameWindow
     {
-        private static Vector3 cameraPos = 10 * Vector3.UnitZ;
+        private static Vector3 cameraPos = -10 * Vector3.UnitZ;
         private static Matrix4 view = Matrix4.LookAt(cameraPos, Vector3.Zero, Vector3.UnitY);
 
         private float verticalFov = MathHelper.DegreesToRadians(45);
@@ -41,24 +42,30 @@ namespace Exercise6
 
         private void LoadPolyhedrons()
         {
-            foreach(var polyhedron in Program.Polyhedrons)
+            foreach (var shape in Program.Polyhedrons)
             {
-                var newVertexBufferObject = GL.GenBuffer();
-                GL.BindBuffer(BufferTarget.ArrayBuffer, newVertexBufferObject);
+                foreach (var polyhedron in shape)
+                {
+                    var newVertexBufferObject = GL.GenBuffer();
+                    GL.BindBuffer(BufferTarget.ArrayBuffer, newVertexBufferObject);
 
-                GL.BufferData(BufferTarget.ArrayBuffer, polyhedron.Vertices.Length * sizeof(float),
-                    polyhedron.Vertices, BufferUsageHint.StaticDraw);
+                    GL.BufferData(BufferTarget.ArrayBuffer, polyhedron.BufferData.Length * sizeof(float),
+                        polyhedron.BufferData, BufferUsageHint.StaticDraw);
 
-                polyhedron.VertexArrayObject = GL.GenVertexArray();
-                GL.BindVertexArray(polyhedron.VertexArrayObject);
+                    polyhedron.VertexArrayObject = GL.GenVertexArray();
+                    GL.BindVertexArray(polyhedron.VertexArrayObject);
 
-                GL.EnableVertexAttribArray(0);
-                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+                    GL.EnableVertexAttribArray(0);
+                    GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
 
-                var elementBufferObject = GL.GenBuffer();
-                GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
-                GL.BufferData(BufferTarget.ElementArrayBuffer, polyhedron.Indices.Length * sizeof(uint),
-                    polyhedron.Indices, BufferUsageHint.StaticDraw);
+                    GL.EnableVertexAttribArray(1);
+                    GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 3 * sizeof(float));
+
+                    var elementBufferObject = GL.GenBuffer();
+                    GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
+                    GL.BufferData(BufferTarget.ElementArrayBuffer, polyhedron.Indices.Length * sizeof(uint),
+                        polyhedron.Indices, BufferUsageHint.StaticDraw);
+                }
             }
         }
 
@@ -78,20 +85,25 @@ namespace Exercise6
             GL.DepthFunc(DepthFunction.Less);
             GL.DepthMask(true);
 
-            var polyhedron = Program.Polyhedrons[Program.CurrentIndex];
-            var model = polyhedron.GetTransform();
+            foreach(var polyhedron in Program.Polyhedrons[Program.CurrentIndex])
+            {
+                var model = polyhedron.GetTransform();
 
-            GL.Uniform4(GL.GetUniformLocation(_shader.Handle, "customColor"),
-                polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "model"), true, ref model);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "view"), true, ref view);
-            GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "projection"), true, ref projection);
-            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "flatMode"), flatLighting ? 1 : 0);
-            GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "cameraPos"), cameraPos);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "customColor"),
+                    polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z);
+                GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "model"), true, ref model);
+                GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "view"), true, ref view);
+                GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "projection"), true, ref projection);
 
-            GL.BindVertexArray(polyhedron.VertexArrayObject);
-            GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
+                var lighting = !polyhedron.IsRound || flatLighting;
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "flatMode"), lighting ? 1 : 0);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "polyMode"),
+                    currentPolygonMode == PolygonMode.Line ? 0 : 1);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "cameraPos"), cameraPos);
 
+                GL.BindVertexArray(polyhedron.VertexArrayObject);
+                GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
+            }
             SwapBuffers();
         }
 
@@ -109,8 +121,8 @@ namespace Exercise6
             {
                 currentPolygonMode = currentPolygonMode switch
                 {
-                    PolygonMode.Fill => PolygonMode.Line,
-                    _ => PolygonMode.Fill,
+                    PolygonMode.Line => PolygonMode.Fill,
+                    _ => PolygonMode.Line,
                 };
                 GL.PolygonMode(MaterialFace.FrontAndBack, currentPolygonMode);
             }
@@ -120,15 +132,21 @@ namespace Exercise6
                 flatLighting = !flatLighting;
             }
 
+            if (input.IsKeyPressed(Keys.Left) || input.IsKeyPressed(Keys.Right))
+            {
+                foreach (var shape in Program.Polyhedrons[Program.CurrentIndex])
+                {
+                    shape.Rotation = Vector3.Zero;
+                }
+                flatLighting = false;
+            }
             if (input.IsKeyPressed(Keys.Right))
             {
                 Program.CurrentIndex += 1;
-                Program.Polyhedrons[Program.CurrentIndex].Rotation = Vector3.Zero;
             }
             if (input.IsKeyPressed(Keys.Left))
             {
                 Program.CurrentIndex -= 1;
-                Program.Polyhedrons[Program.CurrentIndex].Rotation = Vector3.Zero;
             }
 
             if (input.IsKeyPressed(Keys.Space))
@@ -150,15 +168,17 @@ namespace Exercise6
             if (input.IsKeyDown(Keys.E))
                 globalRotation.Z = -rotationSpeed * (float)e.Time;
 
-            var polyhedron = Program.Polyhedrons[Program.CurrentIndex];
-            if (manualRotation)
+            foreach (var shape in Program.Polyhedrons[Program.CurrentIndex])
             {
-                polyhedron.Rotation += globalRotation;
-            }
-            else
-            {
-                //polyhedron.Update();
-                polyhedron.Rotation += new Vector3(0.6f, 0.46f, 0.1f) * (float)e.Time;
+                if (manualRotation)
+                {
+                    shape.Rotation += globalRotation;
+                }
+                else
+                {
+                    //polyhedron.Update();
+                    shape.Rotation += new Vector3(0.6f, 0.46f, 0.1f) * (float)e.Time;
+                }
             }
         }
 

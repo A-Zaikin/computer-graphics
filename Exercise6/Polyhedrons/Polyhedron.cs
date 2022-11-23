@@ -1,15 +1,16 @@
 ﻿using OpenTK.Mathematics;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Exercise6
 {
     public class Polyhedron
     {
         public Vector3[] Points;
-        public float[] Vertices;
         public int[] Indices;
+        public Vector3[] Normals;
+        public float[] BufferData;
+
+        public bool IsRound;
 
         public int VertexArrayObject;
 
@@ -21,11 +22,26 @@ namespace Exercise6
 
         public event Action Animations;
 
-        public Polyhedron(Vector3[] points, int[] indices)
+        public Polyhedron(Vector3[] points, int[] indices, Vector3[] normals = null, bool round = false)
         {
             Points = points;
-            Vertices = Points.ToVertices();
             Indices = indices;
+            Normals = normals;
+            IsRound = round;
+            if (Normals == null)
+            {
+                Normals = new Vector3[Points.Length];
+                for (var i = 0; i < Normals.Length; i++)
+                    Normals[i] = Vector3.UnitZ;
+            }
+
+            var bufferDataVectors = new Vector3[Points.Length * 2];
+            for (var i = 0; i < bufferDataVectors.Length; i += 2)
+            {
+                bufferDataVectors[i] = Points[i / 2];
+                bufferDataVectors[i + 1] = Normals[i / 2];
+            }
+            BufferData = bufferDataVectors.ToVertices();
         }
 
         public Matrix4 GetTransform()
