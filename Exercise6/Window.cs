@@ -8,7 +8,9 @@ namespace Exercise6
 {
     public class Window : GameWindow
     {
-        private Matrix4 view = Matrix4.LookAt(-10 * Vector3.UnitZ, Vector3.Zero, Vector3.UnitY);
+        private static Vector3 cameraPos = 10 * Vector3.UnitZ;
+        private static Matrix4 view = Matrix4.LookAt(cameraPos, Vector3.Zero, Vector3.UnitY);
+
         private float verticalFov = MathHelper.DegreesToRadians(45);
         private Matrix4 projection;
 
@@ -19,7 +21,7 @@ namespace Exercise6
         private float rotationSpeed = 1f;
         private bool manualRotation = true;
 
-        private bool areShadowsEnabled = true;
+        private bool flatLighting = true;
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -50,8 +52,8 @@ namespace Exercise6
                 polyhedron.VertexArrayObject = GL.GenVertexArray();
                 GL.BindVertexArray(polyhedron.VertexArrayObject);
 
-                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
                 GL.EnableVertexAttribArray(0);
+                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
 
                 var elementBufferObject = GL.GenBuffer();
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
@@ -71,27 +73,21 @@ namespace Exercise6
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             GL.Enable(EnableCap.CullFace);
-
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.DepthClamp);
             GL.DepthFunc(DepthFunction.Less);
             GL.DepthMask(true);
 
-            var vertexColorLocation = GL.GetUniformLocation(_shader.Handle, "customColor");
-            var modelLocation = GL.GetUniformLocation(_shader.Handle, "model");
-            var viewLocation = GL.GetUniformLocation(_shader.Handle, "view");
-            var projectionLocation = GL.GetUniformLocation(_shader.Handle, "projection");
-            var shadowsLocation = GL.GetUniformLocation(_shader.Handle, "shadows");
-
             var polyhedron = Program.Polyhedrons[Program.CurrentIndex];
-            GL.Uniform4(vertexColorLocation, polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
-
             var model = polyhedron.GetTransform();
 
-            GL.UniformMatrix4(modelLocation, true, ref model);
-            GL.UniformMatrix4(viewLocation, true, ref view);
-            GL.UniformMatrix4(projectionLocation, true, ref projection);
-            GL.Uniform1(shadowsLocation, areShadowsEnabled ? 1 : 0);
+            GL.Uniform4(GL.GetUniformLocation(_shader.Handle, "customColor"),
+                polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z, 1.0f);
+            GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "model"), true, ref model);
+            GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "view"), true, ref view);
+            GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "projection"), true, ref projection);
+            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "flatMode"), flatLighting ? 1 : 0);
+            GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "cameraPos"), cameraPos);
 
             GL.BindVertexArray(polyhedron.VertexArrayObject);
             GL.DrawElements(PrimitiveType.Triangles, polyhedron.Indices.Length, DrawElementsType.UnsignedInt, 0);
@@ -121,7 +117,7 @@ namespace Exercise6
 
             if (input.IsKeyPressed(Keys.F))
             {
-                areShadowsEnabled = !areShadowsEnabled;
+                flatLighting = !flatLighting;
             }
 
             if (input.IsKeyPressed(Keys.Right))
@@ -142,17 +138,17 @@ namespace Exercise6
 
             globalRotation = Vector3.Zero;
             if (input.IsKeyDown(Keys.W))
-                globalRotation.X = rotationSpeed * (float)e.Time;
-            if (input.IsKeyDown(Keys.S))
                 globalRotation.X = -rotationSpeed * (float)e.Time;
+            if (input.IsKeyDown(Keys.S))
+                globalRotation.X = rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.A))
                 globalRotation.Y = -rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.D))
                 globalRotation.Y = rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.Q))
-                globalRotation.Z = -rotationSpeed * (float)e.Time;
-            if (input.IsKeyDown(Keys.E))
                 globalRotation.Z = rotationSpeed * (float)e.Time;
+            if (input.IsKeyDown(Keys.E))
+                globalRotation.Z = -rotationSpeed * (float)e.Time;
 
             var polyhedron = Program.Polyhedrons[Program.CurrentIndex];
             if (manualRotation)

@@ -28,8 +28,12 @@ namespace Exercise6
                 Title = "Exercise 6",
                 Flags = ContextFlags.ForwardCompatible,
             };
-
-            window = new Window(GameWindowSettings.Default, nativeWindowSettings);
+            var gameWindowSetting = new GameWindowSettings()
+            {
+                RenderFrequency = 60,
+                UpdateFrequency = 60,
+            };
+            window = new Window(gameWindowSetting, nativeWindowSettings);
             window.Run();
             window.Dispose();
         }
@@ -74,22 +78,22 @@ namespace Exercise6
         private static void CreateSurfacesOfRotation()
         {
             // гайка
-            Polyhedrons.Add(RotationSurface.CreateTorus(2, 0.7f, 4, 3));
+            Polyhedrons.Add(RotationSurfaces.CreateTorus(2, 0.7f, 4, 3));
             // шайба
-            Polyhedrons.Add(RotationSurface.CreateTorus(2, 0.7f, 100, 4, MathHelper.Pi / 4));
+            Polyhedrons.Add(RotationSurfaces.CreateTorus(2, 0.7f, 100, 4, MathHelper.Pi / 4));
             // тор
-            Polyhedrons.Add(RotationSurface.CreateTorus(2, 1, 100, 50));
+            Polyhedrons.Add(RotationSurfaces.CreateTorus(2, 1, 100, 50));
 
             // угловая спираль
-            Polyhedrons.Add(RotationSurface.CreateHelix(1.5f, 0.2f, 5, 3, 7, 10));
+            Polyhedrons.Add(RotationSurfaces.CreateHelix(1.5f, 0.2f, 5, 3, 7, 10));
             // спираль
-            Polyhedrons.Add(RotationSurface.CreateHelix(1.5f, 0.5f, 50, 50, 5, 3));
+            Polyhedrons.Add(RotationSurfaces.CreateHelix(1.5f, 0.5f, 50, 50, 5, 3));
 
             // сферы
-            Polyhedrons.Add(RotationSurface.CreateSphere(2, 4, 2));
-            Polyhedrons.Add(RotationSurface.CreateSphere(2, 7, 3));
-            Polyhedrons.Add(RotationSurface.CreateSphere(2, 10, 10));
-            Polyhedrons.Add(RotationSurface.CreateSphere(2, 100, 100));
+            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 4, 2));
+            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 7, 3));
+            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 10, 10));
+            Polyhedrons.Add(RotationSurfaces.CreateSphere(2, 100, 100));
         }
 
         private static void CreatePlatonicSolids()

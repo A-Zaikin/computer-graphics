@@ -36,7 +36,7 @@ namespace Exercise6
             transform *= Matrix4.CreateRotationY(Rotation.Y);
             transform *= Matrix4.CreateRotationZ(Rotation.Z);
 
-            transform *= Matrix4.CreateTranslation(new Vector3(-Position.X, Position.Y, Position.Z));
+            transform *= Matrix4.CreateTranslation(new Vector3(Position.X, Position.Y, Position.Z));
 
             return transform;
         }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Exercise6
 {
-    public static class RotationSurface
+    public static class RotationSurfaces
     {
         public static Polyhedron CreateTorus(float radius, float thickness,
             int sectionCount, int sectionVertexCount, float offsetAngle = 0)
