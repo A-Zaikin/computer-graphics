@@ -15,7 +15,7 @@ void main()
 {
     vec3 normal = flatMode == 1 && polyMode == 1
         ? normalize(cross(dFdx(fragPos), dFdy(fragPos)))
-        : vertexNormal;
+        : normalize(vertexNormal);
 
     vec3 light = vec3(3, 2, -10);
     vec3 lightColor = vec3(1, 1, 1);
@@ -38,5 +38,5 @@ void main()
 //    }
 
     //vec3 objectColor = vec3(0.9, 0.1, 0.2);
-    FragColor = vec4((ambient + diffuse + specular) * color, 1);
+    FragColor = vec4((ambient + diffuse + specular) * normalize(color), 1);
 }
