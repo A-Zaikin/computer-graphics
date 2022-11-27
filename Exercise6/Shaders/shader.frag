@@ -1,42 +1,54 @@
 ﻿#version 330 core
 out vec4 FragColor;
 
-uniform vec3 customColor;
 uniform int flatMode;
 uniform int polyMode;
 uniform vec3 cameraPos;
+
+uniform int generateColors;
+uniform vec3 objectColor;
+uniform float objectSpecularStrength;
+uniform float objectDiffuseStrength;
 
 in float zDistance;
 in vec3 color;
 in vec3 fragPos;
 in vec3 vertexNormal;
 
-void main()
+vec3 get_light(vec3 lightPosition, vec3 lightColor)
 {
     vec3 normal = flatMode == 1 && polyMode == 1
         ? normalize(cross(dFdx(fragPos), dFdy(fragPos)))
         : normalize(vertexNormal);
 
-    vec3 light = vec3(3, 2, -10);
-    vec3 lightColor = vec3(1, 1, 1);
-    vec3 lightDirection = normalize(light - fragPos);
+    float distanceToLight = length(lightPosition - fragPos);
+    float lightAttenuation = 1 / (1 + distanceToLight);
+
+    vec3 lightDirection = normalize(lightPosition - fragPos);
+
     float intensity = max(dot(normal, lightDirection), 0);
-    vec3 diffuse = intensity * lightColor;
+    vec3 diffuse = intensity * lightColor * lightAttenuation;
+    if (generateColors == 0) {
+        diffuse *= objectDiffuseStrength;
+    }
 
     vec3 ambient = 0.1 * vec3(1, 1, 1);
 
-    float specularStrength = 0.5;
+    float specularStrength = generateColors == 1 ? 0.5 : objectSpecularStrength;
     vec3 viewDir = normalize(cameraPos - fragPos);
     vec3 reflectDir = reflect(-lightDirection, normal);
     float specularIntensity = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = specularStrength * specularIntensity * lightColor;
+    vec3 specular = specularStrength * specularIntensity * lightColor * lightAttenuation;
 
-//    if (shadows == 1) {
-//        FragColor = vec4(clamp(color, 0, 1), 1) * intensity * 1.5;
-//    } else {
-//        FragColor = vec4(color, 1);
-//    }
+    return diffuse + ambient + specular;
+}
 
-    //vec3 objectColor = vec3(0.9, 0.1, 0.2);
-    FragColor = vec4((ambient + diffuse + specular) * normalize(color), 1);
+void main()
+{
+    vec3 lightPosition = vec3(-3, 2, 10);
+    vec3 lightColor = vec3(1, 1, 1) * 10;
+    vec3 mainLight = get_light(lightPosition, lightColor);
+
+    vec3 finalColor = generateColors == 1 ? normalize(color) : normalize(objectColor);
+    FragColor = vec4(mainLight * finalColor, 1);
 }

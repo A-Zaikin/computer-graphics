@@ -14,11 +14,14 @@ namespace Exercise6
 
         public int VertexArrayObject;
 
-        public Vector3 Color = new(0.2f, 0.5f, 0.1f);
+        public Material Material;
 
         public Vector3 Position;
         public Vector3 Rotation;
-        public Vector3 Scale = new(1, 1, 1);
+        public Vector3 Scale = Vector3.One;
+        public Vector3 PostScaleRotation;
+
+        public Vector3 WorldRotation;
 
         public event Action Animations;
 
@@ -46,15 +49,24 @@ namespace Exercise6
 
         public Matrix4 GetTransform()
         {
-            var transform = Matrix4.CreateScale(Scale);
+            var transform = Matrix4.CreateFromQuaternion(Quaternion.FromEulerAngles(Rotation));
 
-            transform *= Matrix4.CreateRotationX(Rotation.X);
-            transform *= Matrix4.CreateRotationY(Rotation.Y);
-            transform *= Matrix4.CreateRotationZ(Rotation.Z);
+            transform *= Matrix4.CreateScale(Scale);
 
-            transform *= Matrix4.CreateTranslation(new Vector3(Position.X, Position.Y, Position.Z));
+            transform *= Matrix4.CreateFromQuaternion(Quaternion.FromEulerAngles(PostScaleRotation));
+
+            //var rotatedPosition = Position;
+            //rotatedPosition.Yz = VectorHelper.Rotate(Position.Yz, Rotation.X);
+            //rotatedPosition.Xz = VectorHelper.Rotate(Position.Xz, Rotation.Y);
+            //rotatedPosition.Xy = VectorHelper.Rotate(Position.Xy, Rotation.Z);
+            transform *= Matrix4.CreateTranslation(Position);
 
             return transform;
+        }
+
+        public Matrix4 GetWorldRotation()
+        {
+            return Matrix4.CreateFromQuaternion(Quaternion.FromEulerAngles(WorldRotation));
         }
 
         public void Update()

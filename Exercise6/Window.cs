@@ -9,7 +9,7 @@ namespace Exercise6
 {
     public class Window : GameWindow
     {
-        private static Vector3 cameraPos = -10 * Vector3.UnitZ;
+        private static Vector3 cameraPos = 10 * Vector3.UnitZ;
         private static Matrix4 view = Matrix4.LookAt(cameraPos, Vector3.Zero, Vector3.UnitY);
 
         private float verticalFov = MathHelper.DegreesToRadians(45);
@@ -22,7 +22,8 @@ namespace Exercise6
         private float rotationSpeed = 1f;
         private bool manualRotation = true;
 
-        private bool flatLighting = true;
+        private bool flatLighting = false;
+        private float cameraZoomSpeed = 3;
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -89,11 +90,26 @@ namespace Exercise6
             {
                 var model = polyhedron.GetTransform();
 
-                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "customColor"),
-                    polyhedron.Color.X, polyhedron.Color.Y, polyhedron.Color.Z);
+                if (Program.CurrentIndex == Program.Polyhedrons.Count - 1)
+                {
+                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "generateColors"), 0);
+                    GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "objectColor"), polyhedron.Material.Color);
+                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "objectSpecularStrength"),
+                        polyhedron.Material.SpecularStrength);
+                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "objectDiffuseStrength"),
+                        polyhedron.Material.Color.Length);
+                }
+                else
+                {
+                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "generateColors"), 1);
+                }
+
                 GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "model"), true, ref model);
                 GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "view"), true, ref view);
                 GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "projection"), true, ref projection);
+
+                var worldRotation = polyhedron.GetWorldRotation();
+                GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "worldRotation"), true, ref worldRotation);
 
                 var lighting = !polyhedron.IsRound || flatLighting;
                 GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "flatMode"), lighting ? 1 : 0);
@@ -134,10 +150,10 @@ namespace Exercise6
 
             if (input.IsKeyPressed(Keys.Left) || input.IsKeyPressed(Keys.Right))
             {
-                foreach (var shape in Program.Polyhedrons[Program.CurrentIndex])
-                {
-                    shape.Rotation = Vector3.Zero;
-                }
+                //foreach (var shape in Program.Polyhedrons[Program.CurrentIndex])
+                //{
+                //    shape.Rotation = Vector3.Zero;
+                //}
                 flatLighting = false;
             }
             if (input.IsKeyPressed(Keys.Right))
@@ -154,11 +170,22 @@ namespace Exercise6
                 manualRotation = !manualRotation;
             }
 
+            if (input.IsKeyDown(Keys.Z))
+            {
+                cameraPos.Z -= cameraZoomSpeed * (float)e.Time;
+                view = Matrix4.LookAt(cameraPos, Vector3.Zero, Vector3.UnitY);
+            }
+            if (input.IsKeyDown(Keys.X))
+            {
+                cameraPos.Z += cameraZoomSpeed * (float)e.Time;
+                view = Matrix4.LookAt(cameraPos, Vector3.Zero, Vector3.UnitY);
+            }
+
             globalRotation = Vector3.Zero;
             if (input.IsKeyDown(Keys.W))
-                globalRotation.X = -rotationSpeed * (float)e.Time;
-            if (input.IsKeyDown(Keys.S))
                 globalRotation.X = rotationSpeed * (float)e.Time;
+            if (input.IsKeyDown(Keys.S))
+                globalRotation.X = -rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.A))
                 globalRotation.Y = -rotationSpeed * (float)e.Time;
             if (input.IsKeyDown(Keys.D))
@@ -172,12 +199,12 @@ namespace Exercise6
             {
                 if (manualRotation)
                 {
-                    shape.Rotation += globalRotation;
+                    shape.WorldRotation += globalRotation;
                 }
                 else
                 {
                     //polyhedron.Update();
-                    shape.Rotation += new Vector3(0.6f, 0.46f, 0.1f) * (float)e.Time;
+                    shape.WorldRotation += new Vector3(0.6f, 0.46f, 0.1f) * (float)e.Time;
                 }
             }
         }
