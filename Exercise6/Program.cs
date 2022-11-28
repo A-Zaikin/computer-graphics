@@ -1,9 +1,12 @@
-﻿using OpenTK.Mathematics;
+﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using StbImageSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace Exercise6
@@ -21,7 +24,7 @@ namespace Exercise6
         private static void Main()
         {
             CreatePolyhedrons();
-            CurrentIndex = new LoopIndex(Polyhedrons);
+            CurrentIndex = new LoopIndex(Polyhedrons, Polyhedrons.Count - 1);
 
             timer.Start();
 
@@ -79,10 +82,10 @@ namespace Exercise6
             var frontPanel = Prismatoid.CreateGeneral(
                 PolygonHelper.CreateRegular(Vector2.Zero, 1f, 4),
                 PolygonHelper.CreateRegular(Vector2.Zero, 1.4f, 4),
-                1.4f);
+                1.2f);
             frontPanel.Rotation.X = MathF.PI;
             frontPanel.Rotation.Y = MathF.PI / 4;
-            frontPanel.Position.Y = 0.5f;
+            frontPanel.Position.Y = 0.6f;
             frontPanel.Position.Z = 0.9f;
             frontPanel.Scale.X = 0.4f;
             frontPanel.Scale.Z = 0.5f;
@@ -282,6 +285,24 @@ namespace Exercise6
             rightHandBottom.Position.Z = 0.75f;
             rightHandBottom.PostScaleRotation.X = -3f / 4 * MathF.PI;
 
+            var frontPanelTop = Prismatoid.CreateGeneral(
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.5f, 4),
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.75f, 4), 0.5f);
+            frontPanelTop.Material = metal;
+            frontPanelTop.Rotation.Y = MathF.PI / 4;
+            frontPanelTop.Scale.Z = 0.15f;
+            frontPanelTop.Position.Z = 1.2f;
+            frontPanelTop.Position.Y = -0.3f;
+
+            var frontPanelScreen = Prismatoid.CreateGeneral(
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.5f, 4),
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.75f, 4), 0.5f);
+            frontPanelTop.Material = metal;
+            frontPanelTop.Rotation.Y = MathF.PI / 4;
+            frontPanelTop.Scale.Z = 0.15f;
+            frontPanelTop.Position.Z = 1.2f;
+            frontPanelTop.Position.Y = -0.3f;
+
             AddPolyhedron(body, bodyStripe, lowerBody, frontPanel,
                 eye, eyeHolder, wheel, wheelSuspension,
                 leftArm[0], leftArm[1], leftElbow, leftArmWires[0], leftArmWires[1],
@@ -290,7 +311,8 @@ namespace Exercise6
                 rightForearm[0], rightForearm[1], rightForearmWires[0], rightForearmWires[1],
                 leftCap, rightCap, antenna[0], antenna[1],
                 leftHandCylinder[0], leftHandCylinder[1], leftHandTop, leftHandBottom,
-                rightHandCylinder[0], rightHandCylinder[1], rightHandTop, rightHandBottom);
+                rightHandCylinder[0], rightHandCylinder[1], rightHandTop, rightHandBottom,
+                frontPanelTop);
         }
 
         private static void CreatePrismatoids()

@@ -1,5 +1,6 @@
 ﻿using OpenTK.Mathematics;
 using System;
+using System.Linq;
 
 namespace Exercise6
 {
@@ -8,6 +9,7 @@ namespace Exercise6
         public Vector3[] Points;
         public int[] Indices;
         public Vector3[] Normals;
+        public Vector2[] TextureCoordinates;
         public float[] BufferData;
 
         public bool IsRound;
@@ -25,11 +27,17 @@ namespace Exercise6
 
         public event Action Animations;
 
-        public Polyhedron(Vector3[] points, int[] indices, Vector3[] normals = null, bool round = false)
+        public Polyhedron(Vector3[] points, int[] indices,
+            Vector3[] normals = null, bool round = false, Vector2[] textureCoordinates = null)
         {
             Points = points;
             Indices = indices;
             Normals = normals;
+
+            TextureCoordinates = textureCoordinates;
+            //TextureCoordinates ??= Enumerable.Repeat(Vector2.One, Points.Length).ToArray();
+            TextureCoordinates ??= new Vector2[Points.Length];
+
             IsRound = round;
             if (Normals == null)
             {
@@ -38,13 +46,20 @@ namespace Exercise6
                     Normals[i] = Vector3.UnitZ;
             }
 
-            var bufferDataVectors = new Vector3[Points.Length * 2];
-            for (var i = 0; i < bufferDataVectors.Length; i += 2)
+            BufferData = new float[Points.Length * 8];
+            for (var i = 0; i < Points.Length; i++)
             {
-                bufferDataVectors[i] = Points[i / 2];
-                bufferDataVectors[i + 1] = Normals[i / 2];
+                BufferData[i * 8] = Points[i].X;
+                BufferData[i * 8 + 1] = Points[i].Y;
+                BufferData[i * 8 + 2] = Points[i].Z;
+
+                BufferData[i * 8 + 3] = Normals[i].X;
+                BufferData[i * 8 + 4] = Normals[i].Y;
+                BufferData[i * 8 + 5] = Normals[i].Z;
+
+                BufferData[i * 8 + 6] = TextureCoordinates[i].X;
+                BufferData[i * 8 + 7] = TextureCoordinates[i].Y;
             }
-            BufferData = bufferDataVectors.ToVertices();
         }
 
         public Matrix4 GetTransform()

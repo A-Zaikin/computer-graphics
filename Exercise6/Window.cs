@@ -4,6 +4,8 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
 using System.Linq;
+using StbImageSharp;
+using System.IO;
 
 namespace Exercise6
 {
@@ -39,6 +41,29 @@ namespace Exercise6
 
             _shader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
             _shader.Use();
+
+            LoadTexture();
+        }
+
+        private static void LoadTexture()
+        {
+
+            var handle = GL.GenTexture();
+
+            StbImage.stbi_set_flip_vertically_on_load(1);
+            var image = ImageResult.FromStream(File.OpenRead("metal2.png"), ColorComponents.RedGreenBlueAlpha);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
+                image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
+
+            GL.TexParameter(TextureTarget.Texture2D,
+                TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D,
+                TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.GenerateMipmap, 0);
+            GL.TexParameter(TextureTarget.Texture2D,
+                TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D,
+                TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
         }
 
         private void LoadPolyhedrons()
@@ -57,10 +82,15 @@ namespace Exercise6
                     GL.BindVertexArray(polyhedron.VertexArrayObject);
 
                     GL.EnableVertexAttribArray(0);
-                    GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
+                    GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
 
                     GL.EnableVertexAttribArray(1);
-                    GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 3 * sizeof(float));
+                    GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false,
+                        8 * sizeof(float), 3 * sizeof(float));
+
+                    GL.EnableVertexAttribArray(2);
+                    GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false,
+                        8 * sizeof(float), 6 * sizeof(float));
 
                     var elementBufferObject = GL.GenBuffer();
                     GL.BindBuffer(BufferTarget.ElementArrayBuffer, elementBufferObject);
@@ -98,10 +128,13 @@ namespace Exercise6
                         polyhedron.Material.SpecularStrength);
                     GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "objectDiffuseStrength"),
                         polyhedron.Material.Color.Length);
+
+                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "isObjectTextured"), 1);
                 }
                 else
                 {
                     GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "generateColors"), 1);
+                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "isObjectTextured"), 0);
                 }
 
                 GL.UniformMatrix4(GL.GetUniformLocation(_shader.Handle, "model"), true, ref model);

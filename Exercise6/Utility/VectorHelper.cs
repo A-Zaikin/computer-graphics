@@ -37,6 +37,11 @@ namespace Exercise6
             return new Vector3(MathHelper.Abs(vector.X), MathHelper.Abs(vector.Y), MathHelper.Abs(vector.Z));
         }
 
+        public static Vector2 Abs(Vector2 vector)
+        {
+            return new Vector2(MathHelper.Abs(vector.X), MathHelper.Abs(vector.Y));
+        }
+
         public static IEnumerable<Vector3> MirrorOrthogonally(Vector3 point, Vector3 translate, float scale = 1)
         {
             point = Abs(point);

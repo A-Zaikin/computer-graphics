@@ -10,17 +10,18 @@ uniform vec3 objectColor;
 uniform float objectSpecularStrength;
 uniform float objectDiffuseStrength;
 
+uniform int isObjectTextured;
+
+uniform sampler2D texture0;
+
 in float zDistance;
 in vec3 color;
 in vec3 fragPos;
 in vec3 vertexNormal;
+in vec2 texCoord;
 
-vec3 get_light(vec3 lightPosition, vec3 lightColor)
+vec3 get_light(vec3 lightPosition, vec3 lightColor, vec3 normal)
 {
-    vec3 normal = flatMode == 1 && polyMode == 1
-        ? normalize(cross(dFdx(fragPos), dFdy(fragPos)))
-        : normalize(vertexNormal);
-
     float distanceToLight = length(lightPosition - fragPos);
     float lightAttenuation = 1 / (1 + distanceToLight);
 
@@ -45,10 +46,18 @@ vec3 get_light(vec3 lightPosition, vec3 lightColor)
 
 void main()
 {
+    vec3 normal = flatMode == 1 && polyMode == 1
+        ? normalize(cross(dFdx(fragPos), dFdy(fragPos)))
+        : normalize(vertexNormal);
+
     vec3 lightPosition = vec3(-3, 2, 10);
-    vec3 lightColor = vec3(1, 1, 1) * 10;
-    vec3 mainLight = get_light(lightPosition, lightColor);
+    vec3 lightColor = vec3(1, 1, 1) * 15;
+    vec3 mainLight = get_light(lightPosition, lightColor, normal);
 
     vec3 finalColor = generateColors == 1 ? normalize(color) : normalize(objectColor);
+    if (isObjectTextured == 1) {
+        finalColor *= texture(texture0, texCoord).xyz;
+    }
     FragColor = vec4(mainLight * finalColor, 1);
+    //FragColor = texture(texture0, texCoord).xy;
 }

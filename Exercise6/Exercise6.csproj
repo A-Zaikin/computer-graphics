@@ -6,11 +6,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="book.png" />
+    <None Remove="metal.png" />
+    <None Remove="metal2.png" />
     <None Remove="Shaders\shader.frag" />
     <None Remove="Shaders\shader.vert" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="book.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="metal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="metal2.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Shaders\shader.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -21,6 +33,7 @@
 
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.7.5" />
+    <PackageReference Include="StbImageSharp" Version="2.27.13" />
   </ItemGroup>
 
 </Project>

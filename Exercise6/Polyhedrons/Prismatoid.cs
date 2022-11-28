@@ -1,4 +1,5 @@
 ﻿using OpenTK.Mathematics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -88,12 +89,27 @@ namespace Exercise6
             }
 
             var points = plane1.Concat(plane2).ToArray();
+            var textureCoorinates = new Vector2[points.Length];
+
+            for (LoopIndex i = new(plane1); !i.HasLooped; i += 1)
+            {
+                var index = (float)i / (plane1.Length - 1);
+                textureCoorinates[i] = new Vector2(index, MathF.Abs(1 - index - 0.5f) + 0.5f);
+            }
+
+            for (LoopIndex j = new(plane2); !j.HasLooped; j += 1)
+            {
+                var index = (float)j / (plane2.Length - 1);
+                textureCoorinates[plane1.Length + j] = new Vector2(index,
+                    1 - (MathF.Abs(1 - index - 0.5f) + 0.5f));
+            }
+
             var indices = PolygonHelper.Triangulate(plane1)
-                .Concat(PolygonHelper.Triangulate(plane2, true)
-                    .Select(index => index + plane1.Length))
-                .Concat(sideIndices)
-                .ToArray();
-            return new Polyhedron(points, indices);
+            .Concat(PolygonHelper.Triangulate(plane2, true)
+                .Select(index => index + plane1.Length))
+            .Concat(sideIndices)
+            .ToArray();
+            return new Polyhedron(points, indices, textureCoordinates: textureCoorinates);
         }
 
         public static Polyhedron CreatePyramid(Vector2[] surface, float height, Vector2 apex = default)
