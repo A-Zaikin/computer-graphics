@@ -18,22 +18,71 @@ namespace Exercise8_Shader
         };
         private int fullScreenVao;
 
-        private Vector2 currentLocation;
-        private Vector2 direction;
-        private Vector2 velocity;
-        private float acceleration = 5f;
-        private float scale = 1;
-        private float zoomSpeed = 0.5f;
-        private FractalMode mode;
-        private float rotation = MathF.PI / 4;
-        private float rotationSpeed = 0.5f;
+        private float horizontalFov = MathF.PI / 2;
+        private Vector3 lightPosition;
+        private float time;
+        private Vector3 cameraPosition = new(0, 1.7f, 0);
+        private float moveSpeed = 2;
+        private Vector2 lookAngle;
+        private Matrix4 LookAt;
+        private float mouseSensitivity = 0.0003f;
 
-        private enum FractalMode
+        private struct Sphere
         {
-            Carpet = 0,
-            Triangle = 1,
-            Cross = 2,
+            public Vector3 position;
+            public float radius;
+            public int material;
         }
+        private Sphere[] spheres = new Sphere[]
+        {
+            new Sphere() { position=new(-1, 1, 10), radius=0.4f },
+            new Sphere() { position=new(1, 1, 15), radius=0.8f },
+        };
+
+        private struct Plane
+        {
+            public Vector3 position;
+            public Vector3 normal;
+            public Vector3 height;
+            public Vector3 width;
+            public int material;
+        }
+        private Plane[] planes = new Plane[]
+        {
+            new Plane()
+            {
+                position=new(0, 0, 0),
+                normal=new(0, 1, 0),
+                height=new(0, 0, 50),
+                width=new(50, 0, 0),
+                material=2
+            },
+            new Plane()
+            {
+                position=new(0, 2, 5),
+                normal=new(0, 0, 1),
+                height=new(0, 3, 0),
+                width=new(3, 0, 0),
+                material=1,
+            },
+        };
+
+        private struct Material
+        {
+            public Vector3 color;
+            public float ambient;
+            public float diffuse;
+            public float specular;
+            public float shininess;
+            public float reflection;
+            public float refraction;
+        };
+        private Material[] materials = new Material[]
+        {
+            new Material() { color=new(1, 0, 0.2f), ambient=0.1f, diffuse=1, specular=0.5f, shininess=32 },
+            new Material() { color=new(0.2f, 1f, 0.3f), ambient=0.1f, diffuse=1, specular=0, shininess=8 },
+            new Material() { color=new(0.7f, 0.7f, 0.7f), ambient=0.1f, diffuse=1, specular=1, shininess=128 }
+        };
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -73,25 +122,71 @@ namespace Exercise8_Shader
 
             _shader.Use();
 
-            var translateLocation = GL.GetUniformLocation(_shader.Handle, "translate");
-            GL.Uniform2(translateLocation, currentLocation);
+            var cameraX = MathF.Tan(horizontalFov / 2);
+            var cameraSize = new Vector2(cameraX, cameraX / Size.X * Size.Y);
 
-            var scaleLocation = GL.GetUniformLocation(_shader.Handle, "scale");
-            GL.Uniform1(scaleLocation, scale);
+            GL.Uniform2(GL.GetUniformLocation(_shader.Handle, "resolution"), Size);
+            GL.Uniform2(GL.GetUniformLocation(_shader.Handle, "cameraSize"), cameraSize);
+            GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "lightPosition"),
+                ToViewPosition(lightPosition));
 
-            var resolutionLocation = GL.GetUniformLocation(_shader.Handle, "resolution");
-            GL.Uniform2(resolutionLocation, (float)Size.X, (float)Size.Y);
+            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "sphereCount"), spheres.Length);
+            for (var i = 0; i < spheres.Length; i++)
+            {
 
-            var modeLocation = GL.GetUniformLocation(_shader.Handle, "mode");
-            GL.Uniform1(modeLocation, (int)mode);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].position"),
+                    ToViewPosition(spheres[i].position));
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].radius"), spheres[i].radius);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].material"), spheres[i].material);
+            }
 
-            var rotationLocation = GL.GetUniformLocation(_shader.Handle, "rotation");
-            GL.Uniform1(rotationLocation, rotation);
+            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "planeCount"), planes.Length);
+            for (var i = 0; i < planes.Length; i++)
+            {
+
+                var viewOrigin = ToViewPosition(planes[i].position);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].position"), viewOrigin);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].normal"),
+                    ToRelativeViewPosition(planes[i].normal, planes[i].position, viewOrigin));
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].height"),
+                    ToRelativeViewPosition(planes[i].height, planes[i].position, viewOrigin));
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].width"),
+                    ToRelativeViewPosition(planes[i].width, planes[i].position, viewOrigin));
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].material"), planes[i].material);
+            }
+
+            for (var i = 0; i < materials.Length; i++)
+            {
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].color"), materials[i].color);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].ambient"), materials[i].ambient);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].diffuse"), materials[i].diffuse);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].specular"), materials[i].specular);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].shininess"), materials[i].shininess);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].reflection"), 0);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].refraction"), 0);
+            }
 
             GL.BindVertexArray(fullScreenVao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
             SwapBuffers();
+        }
+
+        private Vector3 ToViewPosition(Vector3 worldPosition)
+        {
+            var viewPosition = (new Vector4(worldPosition, 1) * LookAt).Xyz;
+            viewPosition.Xz *= -1;
+            return viewPosition;
+        }
+
+        private Vector3 ToRelativeViewPosition(Vector3 worldDirection,
+            Vector3 worldOrigin, Vector3 viewOrigin)
+        {
+            var absolutePosition = worldOrigin + worldDirection;
+            var viewPosition = (new Vector4(absolutePosition, 1) * LookAt).Xyz;
+            viewPosition.Xz *= -1;
+            viewPosition -= ToViewPosition(worldOrigin);
+            return viewPosition;
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -104,57 +199,39 @@ namespace Exercise8_Shader
                 Close();
             }
 
-            if (input.IsKeyPressed(Keys.R))
-            {
-                mode = mode switch
-                {
-                    FractalMode.Carpet => FractalMode.Triangle,
-                    FractalMode.Triangle => FractalMode.Cross,
-                    _ => FractalMode.Carpet
-                };
-                velocity = Vector2.Zero;
-                currentLocation = Vector2.Zero;
-                scale = 1;
-                rotation = MathF.PI / 4;
-            }
+            lookAngle += MouseState.Delta * mouseSensitivity;
+            lookAngle.Y = MathHelper.Clamp(lookAngle.Y, -MathF.PI / 2 * 0.95f, MathF.PI / 2 * 0.95f);
+            var lookDirection = Vector3.UnitZ;
+            lookDirection.Yz = lookDirection.Yz.Rotate(lookAngle.Y);
+            lookDirection.Xz = lookDirection.Xz.Rotate(-lookAngle.X);
+            var lookTarget = cameraPosition + lookDirection;
+            LookAt = Matrix4.LookAt(cameraPosition, lookTarget, Vector3.UnitY);
 
-            direction = Vector2.Zero;
+            Vector2 movementDirection = new();
             if (input.IsKeyDown(Keys.W))
-                direction.Y += 1;
-            if (input.IsKeyDown(Keys.A))
-                direction.X -= 1;
+            {
+                movementDirection += lookDirection.Xz;
+            }
             if (input.IsKeyDown(Keys.S))
-                direction.Y -= 1;
+            {
+                movementDirection += -lookDirection.Xz;
+            }
+            if (input.IsKeyDown(Keys.A))
+            {
+                movementDirection += lookDirection.Xz.PerpendicularLeft;
+            }
             if (input.IsKeyDown(Keys.D))
-                direction.X += 1;
-            if (direction.X > 0.01 || direction.Y > 0.01)
             {
-                direction.Normalize();
+                movementDirection += lookDirection.Xz.PerpendicularRight;
             }
+            var actualMoveSpeed = input.IsKeyDown(Keys.LeftShift) ? moveSpeed * 3 : moveSpeed;
+            cameraPosition.Xz += movementDirection * actualMoveSpeed * (float)e.Time;
 
-            velocity += acceleration * (float)e.Time * direction;
-            currentLocation += mode == FractalMode.Carpet
-                ? velocity
-                : velocity / scale;
-
-            if (input.IsKeyDown(Keys.K))
-                scale *= (1 + zoomSpeed * (float)e.Time);
-            if (input.IsKeyDown(Keys.L))
-                scale /= (1 + zoomSpeed * (float)e.Time);
-
-            if (mode == FractalMode.Carpet)
-            {
-                if (scale > 3)
-                    scale = 1;
-                else if (scale < 1)
-                    scale = 3;
-            }
-
-            var scaleCoefficient = mode == FractalMode.Carpet ? 1 : scale;
-            if (input.IsKeyDown(Keys.I))
-                rotation += rotationSpeed * (float)e.Time / scaleCoefficient;
-            if (input.IsKeyDown(Keys.O))
-                rotation -= rotationSpeed * (float)e.Time / scaleCoefficient;
+            time += (float)e.Time;
+            lightPosition = new Vector3(MathF.Sin(time), 0, MathF.Cos(time));
+            lightPosition *= 10;
+            lightPosition.Z += 10;
+            lightPosition.Y = 1;
         }
 
         protected override void OnResize(ResizeEventArgs e)

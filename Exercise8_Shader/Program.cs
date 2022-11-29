@@ -21,13 +21,14 @@ namespace Exercise8_Shader
 
             var nativeWindowSettings = new NativeWindowSettings()
             {
-                Size = new Vector2i(729, 729),
+                Size = new Vector2i(800, 600),
                 Title = "Exercise 4",
                 Flags = ContextFlags.ForwardCompatible,
                 NumberOfSamples = 4,
                 WindowState = WindowState.Fullscreen,
             };
             window = new Window(GameWindowSettings.Default, nativeWindowSettings);
+            window.CursorState = CursorState.Grabbed;
             window.VSync = VSyncMode.On;
             window.Run();
             window.Dispose();
