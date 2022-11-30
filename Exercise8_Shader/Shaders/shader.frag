@@ -37,13 +37,17 @@ uniform Material[8] materials;
 
 #define BACKGROUND_COLOR vec3(0.12, 0.12, 0.12)
 #define LIGHT_GIZMO_COLOR vec3(1)
+#define MAX_DEPTH 10
+
+vec3[MAX_DEPTH] litColorStack;
+float[MAX_DEPTH] reflectionStack;
 
 struct Ray {
     vec3 origin;
     vec3 direction;
 };
 
-Ray getRay() {
+Ray getFirstRay() {
     vec2 uv = (gl_FragCoord.xy - resolution.xy / 2) / resolution.xy;
     return Ray(vec3(0), normalize(vec3(cameraSize * uv, 1)));
 }
@@ -124,20 +128,23 @@ bool tryGetNearestHit(Ray ray, out vec3 hitPoint, out float distanceToOrigin, ou
     return isObjectHit;
 }
 
-vec3 castRay() {
-    vec3 hitPoint, newHitPoint, normal, newNormal, _, diffuse, specular;
+vec3 castRay(Ray ray, out Ray reflectedRay, out float materialReflection) {
+    vec3 hitPoint, newHitPoint, normal, newNormal, _;
     float distanceToOrigin, _f, distanceToObstruction;
     Material material, _m;
 
-    Ray ray = getRay();
     if (isSphereHit(Sphere(lightPosition, 0.2, 0), ray, _, _f, _)
         && !(tryGetNearestHit(ray, _, distanceToObstruction, _, _m) && distanceToObstruction < length(lightPosition)))
     {
         return LIGHT_GIZMO_COLOR;
     }
     if (!tryGetNearestHit(ray, hitPoint, distanceToOrigin, normal, material)) {
-        return BACKGROUND_COLOR;
+        return vec3(0);
     }
+
+    vec3 reflectDirection = reflect(ray.direction, normal);
+    reflectedRay = Ray(hitPoint + reflectDirection * 0.001, reflectDirection);
+    materialReflection = material.reflection;
 
     vec3 lightDirection = normalize(hitPoint - lightPosition);
     float distanceToLight = length(lightPosition - hitPoint);
@@ -153,15 +160,34 @@ vec3 castRay() {
         return ambient * material.color;
     }
     float diffuseIntensity = max(shadowAlignment, 0.0);
-    diffuse = material.diffuse * lightColor * diffuseIntensity;
+    vec3 diffuse = material.diffuse * lightColor * diffuseIntensity;
 
-    vec3 reflectDirection = reflect(lightDirection, normal);
-    float specularIntensity = pow(max(dot(-ray.direction, reflectDirection), 0.0), material.shininess);
-    specular = material.specular * specularIntensity * lightColor;
+    vec3 specularDirection = reflect(lightDirection, normal);
+    float specularIntensity = pow(max(dot(-ray.direction, specularDirection), 0.0), material.shininess);
+    vec3 specular = material.specular * specularIntensity * lightColor;
 
     return (ambient + diffuse + specular) * material.color;
 }
 
+vec3 castRecursiveRay(Ray ray) {
+    float reflection;
+    Ray reflectedRay;
+    for (int i = 0; i < MAX_DEPTH; i++) {
+        litColorStack[i] = castRay(ray, reflectedRay, reflection);
+        reflectionStack[i] = reflection;
+        ray = reflectedRay;
+    }
+
+    for (int i = MAX_DEPTH - 2; i >= 0; i--) {
+        litColorStack[i] += litColorStack[i + 1] * reflectionStack[i];
+    }
+    return litColorStack[0];
+}
+
 void main() {
-    FragColor = vec4(castRay(), 1);
+    vec3 color = castRecursiveRay(getFirstRay());
+    if (color == vec3(0,0,0)) {
+        color = BACKGROUND_COLOR;
+    }
+    FragColor = vec4(color, 1);
 }

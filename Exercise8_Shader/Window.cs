@@ -37,6 +37,7 @@ namespace Exercise8_Shader
         {
             new Sphere() { position=new(-1, 1, 10), radius=0.4f },
             new Sphere() { position=new(1, 1, 15), radius=0.8f },
+            new Sphere() { position=new(-2, 2, -5), radius=2f, material=3 },
         };
 
         private struct Plane
@@ -79,9 +80,10 @@ namespace Exercise8_Shader
         };
         private Material[] materials = new Material[]
         {
-            new Material() { color=new(1, 0, 0.2f), ambient=0.1f, diffuse=1, specular=0.5f, shininess=32 },
-            new Material() { color=new(0.2f, 1f, 0.3f), ambient=0.1f, diffuse=1, specular=0, shininess=8 },
-            new Material() { color=new(0.7f, 0.7f, 0.7f), ambient=0.1f, diffuse=1, specular=1, shininess=128 }
+            new Material() { color=new(1, 0, 0.2f), ambient=0.1f, diffuse=1, specular=0.5f, shininess=32, reflection = 1},
+            new Material() { color=new(0.2f, 1f, 0.3f), ambient=0.1f, diffuse=1, specular=0, shininess=8 , reflection = 1},
+            new Material() { color=new(0.7f, 0.7f, 0.7f), ambient=0.1f, diffuse=1, specular=1, shininess=128, reflection=0.5f },
+            new Material() { color=new(0, 0.4f, 1f), ambient=0.1f, diffuse=1, specular=1, shininess=128, reflection=0.5f }
         };
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
@@ -162,8 +164,8 @@ namespace Exercise8_Shader
                 GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].diffuse"), materials[i].diffuse);
                 GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].specular"), materials[i].specular);
                 GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].shininess"), materials[i].shininess);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].reflection"), 0);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].refraction"), 0);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].reflection"), materials[i].reflection);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].refraction"), materials[i].refraction);
             }
 
             GL.BindVertexArray(fullScreenVao);
