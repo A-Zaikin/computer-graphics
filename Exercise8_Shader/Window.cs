@@ -24,8 +24,8 @@ namespace Exercise8_Shader
         private Vector3 cameraPosition = new(0, 1.7f, 0);
         private float moveSpeed = 2;
         private Vector2 lookAngle;
-        private Matrix4 LookAt;
         private float mouseSensitivity = 0.0003f;
+        private int maxDepth = 5;
 
         private struct Sphere
         {
@@ -37,7 +37,7 @@ namespace Exercise8_Shader
         {
             new Sphere() { position=new(-1, 1, 10), radius=0.4f },
             new Sphere() { position=new(1, 1, 15), radius=0.8f },
-            new Sphere() { position=new(-2, 2, -5), radius=2f, material=3 },
+            new Sphere() { position=new(-2, 2, -5), radius=2f, material=4 },
         };
 
         private struct Plane
@@ -77,13 +77,19 @@ namespace Exercise8_Shader
             public float shininess;
             public float reflection;
             public float refraction;
+            public float refractiveIndex;
         };
         private Material[] materials = new Material[]
         {
-            new Material() { color=new(1, 0, 0.2f), ambient=0.1f, diffuse=1, specular=0.5f, shininess=32, reflection = 1},
-            new Material() { color=new(0.2f, 1f, 0.3f), ambient=0.1f, diffuse=1, specular=0, shininess=8 , reflection = 1},
-            new Material() { color=new(0.7f, 0.7f, 0.7f), ambient=0.1f, diffuse=1, specular=1, shininess=128, reflection=0.5f },
-            new Material() { color=new(0, 0.4f, 1f), ambient=0.1f, diffuse=1, specular=1, shininess=128, reflection=0.5f }
+            new Material() { color=new(1, 0, 0.2f),
+                ambient=0.1f, diffuse=1, specular=0.5f, shininess=32 },
+            new Material() { color=new(0.2f, 1f, 0.3f),
+                ambient=0.1f, diffuse=0.3f, reflection = 0.6f },
+            new Material() { color=new(0.7f, 0.7f, 0.7f),
+                ambient=0.1f, diffuse=1, specular=1, shininess=128 },
+            new Material() { color=new(0, 0.4f, 1f),
+                ambient=0.1f, diffuse=1, specular=1, shininess=128, reflection=0.5f },
+            new Material() { color=new(0), refraction=1f, refractiveIndex=1.01f }
         };
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
@@ -100,6 +106,38 @@ namespace Exercise8_Shader
 
             _shader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
             _shader.Use();
+
+            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "sphereCount"), spheres.Length);
+            for (var i = 0; i < spheres.Length; i++)
+            {
+
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].position"), spheres[i].position);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].radius"), spheres[i].radius);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].material"), spheres[i].material);
+            }
+
+            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "planeCount"), planes.Length);
+            for (var i = 0; i < planes.Length; i++)
+            {
+
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].position"), planes[i].position);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].normal"), planes[i].normal);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].height"), planes[i].height);
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].width"), planes[i].width);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].material"), planes[i].material);
+            }
+
+            for (var i = 0; i < materials.Length; i++)
+            {
+                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].color"), materials[i].color);
+                SetUniform($"materials[{i}].ambient", materials[i].ambient);
+                SetUniform($"materials[{i}].diffuse", materials[i].diffuse);
+                SetUniform($"materials[{i}].specular", materials[i].specular);
+                SetUniform($"materials[{i}].shininess", materials[i].shininess);
+                SetUniform($"materials[{i}].reflection", materials[i].reflection);
+                SetUniform($"materials[{i}].refraction", materials[i].refraction);
+                SetUniform($"materials[{i}].refractiveIndex", materials[i].refractiveIndex);
+            }
         }
 
         private void LoadPolygons()
@@ -129,44 +167,10 @@ namespace Exercise8_Shader
 
             GL.Uniform2(GL.GetUniformLocation(_shader.Handle, "resolution"), Size);
             GL.Uniform2(GL.GetUniformLocation(_shader.Handle, "cameraSize"), cameraSize);
-            GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "lightPosition"),
-                ToViewPosition(lightPosition));
-
-            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "sphereCount"), spheres.Length);
-            for (var i = 0; i < spheres.Length; i++)
-            {
-
-                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].position"),
-                    ToViewPosition(spheres[i].position));
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].radius"), spheres[i].radius);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].material"), spheres[i].material);
-            }
-
-            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "planeCount"), planes.Length);
-            for (var i = 0; i < planes.Length; i++)
-            {
-
-                var viewOrigin = ToViewPosition(planes[i].position);
-                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].position"), viewOrigin);
-                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].normal"),
-                    ToRelativeViewPosition(planes[i].normal, planes[i].position, viewOrigin));
-                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].height"),
-                    ToRelativeViewPosition(planes[i].height, planes[i].position, viewOrigin));
-                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].width"),
-                    ToRelativeViewPosition(planes[i].width, planes[i].position, viewOrigin));
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].material"), planes[i].material);
-            }
-
-            for (var i = 0; i < materials.Length; i++)
-            {
-                GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].color"), materials[i].color);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].ambient"), materials[i].ambient);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].diffuse"), materials[i].diffuse);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].specular"), materials[i].specular);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].shininess"), materials[i].shininess);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].reflection"), materials[i].reflection);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"materials[{i}].refraction"), materials[i].refraction);
-            }
+            GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "lightPosition"), lightPosition);
+            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "maxDepth"), maxDepth);
+            GL.Uniform2(GL.GetUniformLocation(_shader.Handle, "lookAngle"), lookAngle);
+            GL.Uniform3(GL.GetUniformLocation(_shader.Handle, "cameraPosition"), cameraPosition);
 
             GL.BindVertexArray(fullScreenVao);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
@@ -174,21 +178,9 @@ namespace Exercise8_Shader
             SwapBuffers();
         }
 
-        private Vector3 ToViewPosition(Vector3 worldPosition)
+        private void SetUniform(string name, float value)
         {
-            var viewPosition = (new Vector4(worldPosition, 1) * LookAt).Xyz;
-            viewPosition.Xz *= -1;
-            return viewPosition;
-        }
-
-        private Vector3 ToRelativeViewPosition(Vector3 worldDirection,
-            Vector3 worldOrigin, Vector3 viewOrigin)
-        {
-            var absolutePosition = worldOrigin + worldDirection;
-            var viewPosition = (new Vector4(absolutePosition, 1) * LookAt).Xyz;
-            viewPosition.Xz *= -1;
-            viewPosition -= ToViewPosition(worldOrigin);
-            return viewPosition;
+            GL.Uniform1(GL.GetUniformLocation(_shader.Handle, name), value);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -206,8 +198,6 @@ namespace Exercise8_Shader
             var lookDirection = Vector3.UnitZ;
             lookDirection.Yz = lookDirection.Yz.Rotate(lookAngle.Y);
             lookDirection.Xz = lookDirection.Xz.Rotate(-lookAngle.X);
-            var lookTarget = cameraPosition + lookDirection;
-            LookAt = Matrix4.LookAt(cameraPosition, lookTarget, Vector3.UnitY);
 
             Vector2 movementDirection = new();
             if (input.IsKeyDown(Keys.W))
@@ -230,10 +220,19 @@ namespace Exercise8_Shader
             cameraPosition.Xz += movementDirection * actualMoveSpeed * (float)e.Time;
 
             time += (float)e.Time;
-            lightPosition = new Vector3(MathF.Sin(time), 0, MathF.Cos(time));
+            lightPosition = new Vector3(MathF.Sin(time/2), 0, MathF.Cos(time/2));
             lightPosition *= 10;
             lightPosition.Z += 10;
             lightPosition.Y = 1;
+
+            if (input.IsKeyPressed(Keys.R) && maxDepth > 1)
+            {
+                maxDepth -= 1;
+            }
+            if (input.IsKeyPressed(Keys.T) && maxDepth < 7)
+            {
+                maxDepth += 1;
+            }
         }
 
         protected override void OnResize(ResizeEventArgs e)

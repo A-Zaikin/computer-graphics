@@ -25,7 +25,7 @@ namespace Exercise8_Shader
                 Title = "Exercise 4",
                 Flags = ContextFlags.ForwardCompatible,
                 NumberOfSamples = 4,
-                WindowState = WindowState.Fullscreen,
+                //WindowState = WindowState.Fullscreen,
             };
             window = new Window(GameWindowSettings.Default, nativeWindowSettings);
             window.CursorState = CursorState.Grabbed;
