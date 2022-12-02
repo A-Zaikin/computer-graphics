@@ -106,10 +106,21 @@ bool isSphereHit(Sphere sphere, Ray ray, out vec3 hitPoint, out float distanceTo
     hitPoint = ray.origin + distanceToOrigin * ray.direction;
     normal = normalize(hitPoint - sphere.position);
 
+    float cosTheta = min(dot(-ray.direction, normal), 1);
+    float sinTheta = sqrt(1 - cosTheta * cosTheta);
+
+    float refractionRatio;
     if (dot(ray.direction, normal) < 0) {
-        refraction = refract(ray.direction, normal, 1.0 / materials[sphere.material].refractiveIndex);
+        refractionRatio = 1.0 / materials[sphere.material].refractiveIndex;
     } else {
-        refraction = refract(ray.direction, -normal, materials[sphere.material].refractiveIndex);
+        refractionRatio = materials[sphere.material].refractiveIndex;
+        normal *= -1;
+    }
+
+    if (sinTheta * refractionRatio > 1) {
+        refraction = reflect(ray.direction, normal);
+    } else {
+        refraction = refract(ray.direction, normal, refractionRatio);
     }
 
     return true;
@@ -200,9 +211,15 @@ vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
 
     vec3 reflectDirection = reflect(ray.direction, normal);
     reflectedRay = Ray(hitPoint + reflectDirection * 0.001, reflectDirection);
-    refractedRay = Ray(hitPoint + refractionDirection * 0.001, refractionDirection);
     materialReflection = material.reflection;
-    materialRefraction = material.refraction;
+
+    if (refractionDirection == vec3(-1)) {
+        refractedRay = Ray(vec3(0), vec3(-1));
+        materialRefraction = 0;
+    } else {
+        refractedRay = Ray(hitPoint + refractionDirection * 0.001, refractionDirection);
+        materialRefraction = material.refraction;
+    }
 
     vec3 lightDirection = normalize(hitPoint - lightPosition);
     float distanceToLight = length(lightPosition - hitPoint);

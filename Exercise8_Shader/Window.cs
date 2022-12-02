@@ -89,7 +89,7 @@ namespace Exercise8_Shader
                 ambient=0.1f, diffuse=1, specular=1, shininess=128 },
             new Material() { color=new(0, 0.4f, 1f),
                 ambient=0.1f, diffuse=1, specular=1, shininess=128, reflection=0.5f },
-            new Material() { color=new(0), refraction=1f, refractiveIndex=1.01f }
+            new Material() { color=new(0), refraction=1f, refractiveIndex=1.03f }
         };
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
