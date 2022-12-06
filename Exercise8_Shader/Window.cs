@@ -18,14 +18,14 @@ namespace Exercise8_Shader
         };
         private int fullScreenVao;
 
-        private float horizontalFov = MathF.PI / 2;
+        private float horizontalFov = MathHelper.DegreesToRadians(140f);
         private Vector3 lightPosition;
         private float time;
-        private Vector3 cameraPosition = new(0, 1.7f, 0);
+        private Vector3 cameraPosition = new(0, 1.7f, -3);
         private float moveSpeed = 2;
         private Vector2 lookAngle;
         private float mouseSensitivity = 0.0003f;
-        private int maxDepth = 5;
+        private int maxDepth = 4;
 
         private struct Sphere
         {
@@ -35,9 +35,11 @@ namespace Exercise8_Shader
         }
         private Sphere[] spheres = new Sphere[]
         {
-            new Sphere() { position=new(-1, 1, 10), radius=0.4f },
-            new Sphere() { position=new(1, 1, 15), radius=0.8f },
-            new Sphere() { position=new(-2, 2, -5), radius=2f, material=4 },
+            new Sphere() { position=new(3, 1.3f, 2), radius=0.8f, material=3 },
+            new Sphere() { position=new(0, 2, 2), radius=1f, material=5 },
+            new Sphere() { position=new(-3, 2, 2), radius=1.2f, material=4 },
+            //new Sphere() { position=new(1, 1, 15), radius=0.8f },
+            //new Sphere() { position=new(-2, 2, -5), radius=2f, material=4 },
         };
 
         private struct Plane
@@ -50,21 +52,68 @@ namespace Exercise8_Shader
         }
         private Plane[] planes = new Plane[]
         {
+            //floor
             new Plane()
             {
                 position=new(0, 0, 0),
                 normal=new(0, 1, 0),
-                height=new(0, 0, 50),
-                width=new(50, 0, 0),
-                material=2
+                height=new(0, 0, 20),
+                width=new(20, 0, 0),
+                material=0
             },
+            //ceiling
             new Plane()
             {
-                position=new(0, 2, 5),
+                position=new(0, 5, 0),
+                normal=new(0, 1, 0),
+                height=new(0, 0, 20),
+                width=new(20, 0, 0),
+                material=0
+            },
+            //white wall
+            new Plane()
+            {
+                position=new(0, 0, 5),
+                normal=new(0, 0, -1),
+                height=new(0, 20, 0),
+                width=new(20, 0, 0),
+                material=0,
+            },
+            //back white wall
+            new Plane()
+            {
+                position=new(0, 0, -5),
                 normal=new(0, 0, 1),
-                height=new(0, 3, 0),
-                width=new(3, 0, 0),
+                height=new(0, 20, 0),
+                width=new(20, 0, 0),
+                material=0,
+            },
+            //green wall
+            new Plane()
+            {
+                position=new(5, 0, 0),
+                normal=new(-1, 0, 0),
+                height=new(0, 20, 0),
+                width=new(0, 0, 20),
                 material=1,
+            },
+            //red wall
+            new Plane()
+            {
+                position=new(-5, 0, 0),
+                normal=new(1, 0, 0),
+                height=new(0, 20, 0),
+                width=new(0, 0, 20),
+                material=2,
+            },
+            //mirror
+            new Plane()
+            {
+                position=new(3, 1.5f, 4),
+                normal=new(0, 0, -1),
+                height=new(0, 3, 0),
+                width=new(2, 0, 0),
+                material=6,
             },
         };
 
@@ -81,15 +130,23 @@ namespace Exercise8_Shader
         };
         private Material[] materials = new Material[]
         {
-            new Material() { color=new(1, 0, 0.2f),
+            //white ceiling and floor
+            new Material() { color=new(1, 1, 1),
                 ambient=0.1f, diffuse=1, specular=0.5f, shininess=32 },
-            new Material() { color=new(0.2f, 1f, 0.3f),
-                ambient=0.1f, diffuse=0.3f, reflection = 0.6f },
+            //green right wall
+            new Material() { color=new(0, 1, 0),
+                ambient=0.1f, diffuse=1, specular=0.5f, shininess=32 },
+            //red left wall
+            new Material() { color=new(1, 0, 0),
+                ambient=0.1f, diffuse=1, specular=0.5f, shininess=32 },
+
+            new Material() { color=new(0.2f, 0.3f, 1),
+                ambient=0.1f, diffuse=1f, specular=1, shininess=128, reflection = 0.3f },
             new Material() { color=new(0.7f, 0.7f, 0.7f),
-                ambient=0.1f, diffuse=1, specular=1, shininess=128 },
-            new Material() { color=new(0, 0.4f, 1f),
-                ambient=0.1f, diffuse=1, specular=1, shininess=128, reflection=0.5f },
-            new Material() { color=new(0), refraction=1f, refractiveIndex=1.03f }
+                ambient=0.1f, diffuse=0.5f, specular=0.5f, shininess=4, refraction=1, refractiveIndex=1.03f },
+            new Material() { color=new(1, 0.4f, 1f),
+                ambient=0.1f, diffuse=1, specular=0.3f, shininess=4 },
+            new Material() { color=new(0.7f, 0.7f, 0.7f), reflection=1 },
         };
 
         public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
@@ -221,9 +278,8 @@ namespace Exercise8_Shader
 
             time += (float)e.Time;
             lightPosition = new Vector3(MathF.Sin(time/2), 0, MathF.Cos(time/2));
-            lightPosition *= 10;
-            lightPosition.Z += 10;
-            lightPosition.Y = 1;
+            lightPosition *= 2;
+            lightPosition.Y = 4f;
 
             if (input.IsKeyPressed(Keys.R) && maxDepth > 1)
             {

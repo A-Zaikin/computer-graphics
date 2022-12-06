@@ -42,6 +42,7 @@ uniform int maxDepth;
 
 #define BACKGROUND_COLOR vec3(0.5, 0.5, 0.5)
 #define LIGHT_GIZMO_COLOR vec3(1)
+#define LIGHT_COLOR vec3(1) * 0.7
 
 struct Ray {
     vec3 origin;
@@ -182,6 +183,17 @@ bool tryGetNearestHit(Ray ray, out vec3 hitPoint, out float distanceToOrigin, ou
             hitPoint = newHitPoint;
             normal = newNormal;
             material = materials[planes[i].material];
+
+            vec3 pointOnPlane = hitPoint - planes[i].position;
+            float planeHeight = length(planes[i].height), planeWidth = length(planes[i].width);
+            float planePointY = dot(pointOnPlane, planes[i].height) / planeHeight;
+            if (planePointY < 0) planePointY--;
+            float planePointX = dot(pointOnPlane, planes[i].width) / planeWidth;
+            if (planePointX < 0) planePointX--;
+            if ((int(planePointY) + int(planePointX)) % 2 == 0) {
+                material.color /= 1.5;
+            }
+
             refraction = newRefraction;
             isObjectHit = true;
         }
@@ -223,12 +235,11 @@ vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
 
     vec3 lightDirection = normalize(hitPoint - lightPosition);
     float distanceToLight = length(lightPosition - hitPoint);
-    vec3 lightColor = vec3(1);
 
     Ray shadowRay = Ray(hitPoint, -lightDirection);
     shadowRay.origin += shadowRay.direction * 0.001;
     float shadowAlignment = dot(normal, shadowRay.direction);
-    vec3 ambient = material.ambient * lightColor;
+    vec3 ambient = material.ambient * vec3(1);
 
     if (tryGetNearestHit(shadowRay, _, distanceToObstruction, _, _m, _) && distanceToObstruction < distanceToLight
         || shadowAlignment < 0)
@@ -236,13 +247,13 @@ vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
         return ambient * material.color;
     }
     float diffuseIntensity = max(shadowAlignment, 0.0);
-    vec3 diffuse = material.diffuse * lightColor * diffuseIntensity;
+    vec3 diffuse = material.diffuse * LIGHT_COLOR * diffuseIntensity;
 
     vec3 specular = vec3(0);
     if (material.shininess > 0) {
         vec3 specularDirection = reflect(lightDirection, normal);
         float specularIntensity = pow(max(dot(-ray.direction, specularDirection), 0.0), material.shininess);
-        specular = material.specular * specularIntensity * lightColor;
+        specular = material.specular * specularIntensity * LIGHT_COLOR;
     }
 
     return (ambient + diffuse + specular) * material.color;
