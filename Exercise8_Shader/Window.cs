@@ -31,13 +31,13 @@ namespace Exercise8_Shader
         {
             public Vector3 position;
             public float radius;
-            public int material;
+            public int materialId;
         }
         private Sphere[] spheres = new Sphere[]
         {
-            new Sphere() { position=new(3, 1.3f, 2), radius=0.8f, material=3 },
-            new Sphere() { position=new(0, 2, 2), radius=1f, material=5 },
-            new Sphere() { position=new(-3, 2, 2), radius=1.2f, material=4 },
+            new Sphere() { position=new(3, 1.3f, 2), radius=0.8f, materialId=3 },
+            new Sphere() { position=new(0, 2, 2), radius=1f, materialId=5 },
+            new Sphere() { position=new(-3, 2, 2), radius=1.2f, materialId=4 },
             //new Sphere() { position=new(1, 1, 15), radius=0.8f },
             //new Sphere() { position=new(-2, 2, -5), radius=2f, material=4 },
         };
@@ -48,7 +48,7 @@ namespace Exercise8_Shader
             public Vector3 normal;
             public Vector3 height;
             public Vector3 width;
-            public int material;
+            public int materialId;
         }
         private Plane[] planes = new Plane[]
         {
@@ -59,7 +59,7 @@ namespace Exercise8_Shader
                 normal=new(0, 1, 0),
                 height=new(0, 0, 20),
                 width=new(20, 0, 0),
-                material=0
+                materialId=0
             },
             //ceiling
             new Plane()
@@ -68,7 +68,7 @@ namespace Exercise8_Shader
                 normal=new(0, 1, 0),
                 height=new(0, 0, 20),
                 width=new(20, 0, 0),
-                material=0
+                materialId=0
             },
             //white wall
             new Plane()
@@ -77,7 +77,7 @@ namespace Exercise8_Shader
                 normal=new(0, 0, -1),
                 height=new(0, 20, 0),
                 width=new(20, 0, 0),
-                material=0,
+                materialId=0,
             },
             //back white wall
             new Plane()
@@ -86,7 +86,7 @@ namespace Exercise8_Shader
                 normal=new(0, 0, 1),
                 height=new(0, 20, 0),
                 width=new(20, 0, 0),
-                material=0,
+                materialId=0,
             },
             //green wall
             new Plane()
@@ -95,7 +95,7 @@ namespace Exercise8_Shader
                 normal=new(-1, 0, 0),
                 height=new(0, 20, 0),
                 width=new(0, 0, 20),
-                material=1,
+                materialId=1,
             },
             //red wall
             new Plane()
@@ -104,7 +104,7 @@ namespace Exercise8_Shader
                 normal=new(1, 0, 0),
                 height=new(0, 20, 0),
                 width=new(0, 0, 20),
-                material=2,
+                materialId=2,
             },
             //mirror
             new Plane()
@@ -113,7 +113,7 @@ namespace Exercise8_Shader
                 normal=new(0, 0, -1),
                 height=new(0, 3, 0),
                 width=new(2, 0, 0),
-                material=6,
+                materialId=6,
             },
         };
 
@@ -142,8 +142,11 @@ namespace Exercise8_Shader
 
             new Material() { color=new(0.2f, 0.3f, 1),
                 ambient=0.1f, diffuse=1f, specular=1, shininess=128, reflection = 0.3f },
-            new Material() { color=new(0.7f, 0.7f, 0.7f),
-                ambient=0.1f, diffuse=0.5f, specular=0.5f, shininess=4, refraction=1, refractiveIndex=1.03f },
+            //new Material() { color=new(0.7f, 0.7f, 0.7f),
+            //    ambient=0.1f, diffuse=0.5f, specular=0.5f, shininess=4, refraction=0.8f, refractiveIndex=1.03f },
+            new Material() { color=new(0.7f), ambient = 0.1f,
+                diffuse=0.5f, specular=0.5f, shininess=32,
+                refraction=0.8f, refractiveIndex=1.03f },
             new Material() { color=new(1, 0.4f, 1f),
                 ambient=0.1f, diffuse=1, specular=0.3f, shininess=4 },
             new Material() { color=new(0.7f, 0.7f, 0.7f), reflection=1 },
@@ -170,7 +173,7 @@ namespace Exercise8_Shader
 
                 GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].position"), spheres[i].position);
                 GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].radius"), spheres[i].radius);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].material"), spheres[i].material);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"spheres[{i}].materialId"), spheres[i].materialId);
             }
 
             GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "planeCount"), planes.Length);
@@ -181,7 +184,7 @@ namespace Exercise8_Shader
                 GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].normal"), planes[i].normal);
                 GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].height"), planes[i].height);
                 GL.Uniform3(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].width"), planes[i].width);
-                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].material"), planes[i].material);
+                GL.Uniform1(GL.GetUniformLocation(_shader.Handle, $"planes[{i}].materialId"), planes[i].materialId);
             }
 
             for (var i = 0; i < materials.Length; i++)

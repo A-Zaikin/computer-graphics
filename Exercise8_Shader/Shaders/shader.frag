@@ -1,30 +1,20 @@
 ﻿#version 330 core
 out vec4 FragColor;
 
-uniform ivec2 resolution;
-uniform vec2 cameraSize;
-uniform vec2 lookAngle;
-uniform vec3 cameraPosition;
 
-uniform vec3 lightPosition;
-
-uniform int sphereCount;
 struct Sphere {
     vec3 position;
     float radius;
-    int material;
+    int materialId;
 };
-uniform Sphere[32] spheres;
 
-uniform int planeCount;
 struct Plane {
     vec3 position;
     vec3 normal;
     vec3 height;
     vec3 width;
-    int material;
+    int materialId;
 };
-uniform Plane[32] planes;
 
 struct Material {
     vec3 color;
@@ -36,38 +26,54 @@ struct Material {
     float refraction;
     float refractiveIndex;
 };
-uniform Material[8] materials;
-
-uniform int maxDepth;
-
-#define BACKGROUND_COLOR vec3(0.5, 0.5, 0.5)
-#define LIGHT_GIZMO_COLOR vec3(1)
-#define LIGHT_COLOR vec3(1) * 0.7
 
 struct Ray {
     vec3 origin;
     vec3 direction;
 };
 
-vec3[128] colorStack;
-Ray[128] rayStack;
-float[128] reflectionStack;
-float[128] refractionStack;
+struct Hit {
+    vec3 point;
+    float distanceTo;
+    vec3 normal;
+    vec3 refractionDirection;
+    Material material;
+};
+
+
+uniform ivec2 resolution;
+uniform vec2 cameraSize;
+uniform vec2 lookAngle;
+uniform vec3 cameraPosition;
+uniform int maxDepth;
+
+uniform vec3 lightPosition;
+
+uniform int sphereCount;
+uniform Sphere[32] spheres;
+
+uniform int planeCount;
+uniform Plane[32] planes;
+
+uniform Material[8] materials;
+
+
+#define BACKGROUND_COLOR vec3(0.5, 0.5, 0.5)
+#define LIGHT_GIZMO_COLOR vec3(1)
+#define LIGHT_COLOR vec3(1) * 0.7
+#define STACK_SIZE 128
+
+vec3[STACK_SIZE] colorStack;
+Ray[STACK_SIZE] rayStack;
+float[STACK_SIZE] reflectionStack;
+float[STACK_SIZE] refractionStack;
+bool[STACK_SIZE] skipRay = bool[STACK_SIZE](false);
+
 
 vec2 rotate(vec2 v, float angle) {
     return vec2(
         v.x * cos(angle) - v.y * sin(angle),
         v.x * sin(angle) + v.y * cos(angle));
-}
-
-vec3 refractVector(vec3 direction, vec3 normal, float refractionRatio) {
-    float cosTheta = min(dot(-direction, normal), 1);
-    vec3 outPerpendicular = refractionRatio * (direction + cosTheta * normal);
-    float perpLengthSquared = outPerpendicular.x * outPerpendicular.x
-        + outPerpendicular.y * outPerpendicular.y
-        + outPerpendicular.z * outPerpendicular.z;
-    vec3 outParallel = -sqrt(abs(1 - perpLengthSquared)) * normal;
-    return outPerpendicular + outParallel;
 }
 
 int ipow(int base, int power) {
@@ -78,7 +84,7 @@ int ipow(int base, int power) {
     return num;
 }
 
-Ray getFirstRay() {
+Ray getCameraRay() {
     vec2 uv = (gl_FragCoord.xy - resolution.xy / 2) / resolution.xy;
     vec3 direction = vec3(cameraSize * uv, 1);
     direction.yz = rotate(direction.yz, lookAngle.y);
@@ -86,8 +92,7 @@ Ray getFirstRay() {
     return Ray(cameraPosition, normalize(direction));
 }
 
-bool isSphereHit(Sphere sphere, Ray ray, out vec3 hitPoint, out float distanceToOrigin,
-    out vec3 normal, out vec3 refraction)
+bool isSphereHit(Sphere sphere, Ray ray, out Hit hit)
 {
     vec3 l = sphere.position - ray.origin;
     float tca = dot(l, ray.direction);
@@ -103,44 +108,46 @@ bool isSphereHit(Sphere sphere, Ray ray, out vec3 hitPoint, out float distanceTo
     }
 
     float thc = sqrt(radiusSquared - distanceSquared);
-    distanceToOrigin = thc > tca ? tca + thc : min(tca - thc, tca + thc);
-    hitPoint = ray.origin + distanceToOrigin * ray.direction;
-    normal = normalize(hitPoint - sphere.position);
+    hit.distanceTo = thc > tca ? tca + thc : min(tca - thc, tca + thc);
+    hit.point = ray.origin + hit.distanceTo * ray.direction;
+    hit.normal = normalize(hit.point - sphere.position);
 
-    float cosTheta = min(dot(-ray.direction, normal), 1);
+    float cosTheta = min(dot(-ray.direction, hit.normal), 1);
     float sinTheta = sqrt(1 - cosTheta * cosTheta);
 
+    hit.material = materials[sphere.materialId];
     float refractionRatio;
-    if (dot(ray.direction, normal) < 0) {
-        refractionRatio = 1.0 / materials[sphere.material].refractiveIndex;
+    if (dot(ray.direction, hit.normal) < 0) {
+        refractionRatio = 1.0 / hit.material.refractiveIndex;
     } else {
-        refractionRatio = materials[sphere.material].refractiveIndex;
-        normal *= -1;
+        refractionRatio = hit.material.refractiveIndex;
+        hit.normal *= -1;
     }
 
     if (sinTheta * refractionRatio > 1) {
-        refraction = reflect(ray.direction, normal);
+        hit.refractionDirection = reflect(ray.direction, hit.normal);
     } else {
-        refraction = refract(ray.direction, normal, refractionRatio);
+        hit.refractionDirection = refract(ray.direction, hit.normal, refractionRatio);
     }
 
     return true;
 }
 
-bool isPlaneHit(Plane plane, Ray ray, out vec3 hitPoint, out float distanceToOrigin,
-    out vec3 normal, out vec3 refraction)
+bool isPlaneHit(Plane plane, Ray ray, out Hit hit)
 {
     float perpendicular = dot(plane.normal, ray.direction);
     if (perpendicular == 0) {
         return false;
     }
-    distanceToOrigin = dot(plane.position - ray.origin, plane.normal) / perpendicular;
-    if (distanceToOrigin < 0) {
+    hit.distanceTo = dot(plane.position - ray.origin, plane.normal) / perpendicular;
+    if (hit.distanceTo < 0) {
         return false;
     }
-    hitPoint = ray.origin + distanceToOrigin * ray.direction;
-    vec3 pointOnPlane = hitPoint - plane.position;
-    float planeHeight = length(plane.height), planeWidth = length(plane.width);
+    hit.point = ray.origin + hit.distanceTo * ray.direction;
+
+    vec3 pointOnPlane = hit.point - plane.position;
+    float planeWidth = length(plane.width);
+    float planeHeight = length(plane.height);
     float planePointY = dot(pointOnPlane, plane.height) / planeHeight;
     float planePointX = dot(pointOnPlane, plane.width) / planeWidth;
     if (planePointY > planeHeight / 2 || planePointY < -planeHeight / 2
@@ -148,53 +155,43 @@ bool isPlaneHit(Plane plane, Ray ray, out vec3 hitPoint, out float distanceToOri
     {
         return false;
     }
-    normal = perpendicular < dot(-plane.normal, ray.direction) ? plane.normal : -plane.normal;
 
-    refraction = ray.direction;
+    hit.material = materials[plane.materialId];
+    if (planePointY < 0) {
+        planePointY--;
+    }
+    if (planePointX < 0) {
+        planePointX--;
+    }
+    if ((int(planePointY) + int(planePointX)) % 2 == 0) {
+        hit.material.color /= 1.5;
+    }
+
+    hit.normal = perpendicular < dot(-plane.normal, ray.direction) ? plane.normal : -plane.normal;
+    hit.refractionDirection = ray.direction;
 
     return true;
 }
 
-bool tryGetNearestHit(Ray ray, out vec3 hitPoint, out float distanceToOrigin, out vec3 normal,
-    out Material material, out vec3 refraction)
+bool tryGetNearestHit(Ray ray, out Hit hit)
 {
-    vec3 newHitPoint, newNormal, newRefraction;
-    float newDistanceToOrigin;
+    Hit newHit;
     bool isObjectHit = false;
 
     for (int i = 0; i < sphereCount; i++) {
-        if (isSphereHit(spheres[i], ray, newHitPoint, newDistanceToOrigin, newNormal, newRefraction)
-            && (isObjectHit == false || newDistanceToOrigin < distanceToOrigin))
+        if (isSphereHit(spheres[i], ray, newHit)
+            && (isObjectHit == false || newHit.distanceTo < hit.distanceTo))
         {
-            distanceToOrigin = newDistanceToOrigin;
-            hitPoint = newHitPoint;
-            normal = newNormal;
-            material = materials[spheres[i].material];
-            refraction = newRefraction;
+            hit = newHit;
             isObjectHit = true;
         }
     }
 
     for (int i = 0; i < planeCount; i++) {
-        if (isPlaneHit(planes[i], ray, newHitPoint, newDistanceToOrigin, newNormal, newRefraction)
-            && (isObjectHit == false || newDistanceToOrigin < distanceToOrigin))
+        if (isPlaneHit(planes[i], ray, newHit)
+            && (isObjectHit == false || newHit.distanceTo < hit.distanceTo))
         {
-            distanceToOrigin = newDistanceToOrigin;
-            hitPoint = newHitPoint;
-            normal = newNormal;
-            material = materials[planes[i].material];
-
-            vec3 pointOnPlane = hitPoint - planes[i].position;
-            float planeHeight = length(planes[i].height), planeWidth = length(planes[i].width);
-            float planePointY = dot(pointOnPlane, planes[i].height) / planeHeight;
-            if (planePointY < 0) planePointY--;
-            float planePointX = dot(pointOnPlane, planes[i].width) / planeWidth;
-            if (planePointX < 0) planePointX--;
-            if ((int(planePointY) + int(planePointX)) % 2 == 0) {
-                material.color /= 1.5;
-            }
-
-            refraction = newRefraction;
+            hit = newHit;
             isObjectHit = true;
         }
     }
@@ -202,61 +199,90 @@ bool tryGetNearestHit(Ray ray, out vec3 hitPoint, out float distanceToOrigin, ou
     return isObjectHit;
 }
 
+float getLightObstruction(Ray shadowRay, float distanceToLight) {
+    Hit hit;
+    float lightObstruction;
+
+    for (int i = 0; i < sphereCount; i++) {
+        if (isSphereHit(spheres[i], shadowRay, hit) && hit.distanceTo < distanceToLight)
+        {
+            lightObstruction += 1 - materials[spheres[i].materialId].refraction;
+            if (lightObstruction >= 1) {
+                return 1;
+            }
+        }
+    }
+
+    for (int i = 0; i < planeCount; i++) {
+        if (isPlaneHit(planes[i], shadowRay, hit) && hit.distanceTo < distanceToLight)
+        {
+            lightObstruction += 1 - materials[planes[i].materialId].refraction;
+            if (lightObstruction >= 1) {
+                return 1;
+            }
+        }
+    }
+
+    return lightObstruction;
+}
+
 vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
     out float materialReflection, out float materialRefraction)
 {
-    vec3 hitPoint, newHitPoint, normal, _, refractionDirection;
-    float distanceToOrigin, _f, distanceToObstruction;
-    Material _m, material;
+    Hit hit, newHit;
 
-    if (isSphereHit(Sphere(lightPosition, 0.2, 0), ray, _, distanceToOrigin, _, _)
-        && !(tryGetNearestHit(ray, _, distanceToObstruction, _, _m, _) && distanceToObstruction < distanceToOrigin))
+    // light gizmo
+    if (isSphereHit(Sphere(lightPosition, 0.2, 0), ray, hit)
+        && !(tryGetNearestHit(ray, newHit) && newHit.distanceTo < hit.distanceTo))
     {
         return LIGHT_GIZMO_COLOR;
     }
 
-    if (!tryGetNearestHit(ray, hitPoint, distanceToOrigin, normal, material, refractionDirection)) {
+    // main hit
+    if (!tryGetNearestHit(ray, hit)) {
         materialReflection = materialRefraction = 0;
         reflectedRay = refractedRay = ray;
         return BACKGROUND_COLOR;
     }
 
-    vec3 reflectDirection = reflect(ray.direction, normal);
-    reflectedRay = Ray(hitPoint + reflectDirection * 0.001, reflectDirection);
-    materialReflection = material.reflection;
+    // reflection and refraction
+    vec3 reflectDirection = reflect(ray.direction, hit.normal);
+    reflectedRay = Ray(hit.point + reflectDirection * 0.001, reflectDirection);
+    materialReflection = hit.material.reflection;
 
-    if (refractionDirection == vec3(-1)) {
-        refractedRay = Ray(vec3(0), vec3(-1));
-        materialRefraction = 0;
-    } else {
-        refractedRay = Ray(hitPoint + refractionDirection * 0.001, refractionDirection);
-        materialRefraction = material.refraction;
-    }
+    refractedRay = Ray(hit.point + hit.refractionDirection * 0.001, hit.refractionDirection);
+    materialRefraction = hit.material.refraction;
 
-    vec3 lightDirection = normalize(hitPoint - lightPosition);
-    float distanceToLight = length(lightPosition - hitPoint);
+    // shadow
+    vec3 lightDirection = normalize(hit.point - lightPosition);
+    float distanceToLight = length(lightPosition - hit.point);
 
-    Ray shadowRay = Ray(hitPoint, -lightDirection);
+    Ray shadowRay = Ray(hit.point, -lightDirection);
     shadowRay.origin += shadowRay.direction * 0.001;
-    float shadowAlignment = dot(normal, shadowRay.direction);
-    vec3 ambient = material.ambient * vec3(1);
+    float shadowAlignment = dot(hit.normal, shadowRay.direction);
+    vec3 ambient = hit.material.ambient * vec3(1);
 
-    if (tryGetNearestHit(shadowRay, _, distanceToObstruction, _, _m, _) && distanceToObstruction < distanceToLight
-        || shadowAlignment < 0)
-    {
-        return ambient * material.color;
-    }
+    // diffuse
     float diffuseIntensity = max(shadowAlignment, 0.0);
-    vec3 diffuse = material.diffuse * LIGHT_COLOR * diffuseIntensity;
+    vec3 diffuse = hit.material.diffuse * LIGHT_COLOR * diffuseIntensity;
 
+    // specular
     vec3 specular = vec3(0);
-    if (material.shininess > 0) {
-        vec3 specularDirection = reflect(lightDirection, normal);
-        float specularIntensity = pow(max(dot(-ray.direction, specularDirection), 0.0), material.shininess);
-        specular = material.specular * specularIntensity * LIGHT_COLOR;
+    if (hit.material.shininess > 0) {
+        vec3 specularDirection = reflect(lightDirection, hit.normal);
+        float specularIntensity = pow(max(dot(-ray.direction, specularDirection), 0.0), hit.material.shininess);
+        specular = hit.material.specular * specularIntensity * LIGHT_COLOR;
     }
 
-    return (ambient + diffuse + specular) * material.color;
+    float lightObstruction = getLightObstruction(shadowRay, distanceToLight);
+    vec3 color = hit.material.color * (1 - hit.material.reflection - hit.material.refraction);
+    if (shadowAlignment < 0 || lightObstruction == 1)
+    {
+        return ambient * color;
+    }
+
+    return (ambient + (1 - lightObstruction) * (diffuse + specular)) * color;
+    //return (ambient + diffuse + specular) * hit.material.color;
 }
 
 vec3 castRecursiveRay(Ray ray) {
@@ -270,7 +296,7 @@ vec3 castRecursiveRay(Ray ray) {
 
     rayStack[1] = ray;
     for (int i = 1; i < rayCount; i++) {
-        if (rayStack[i].direction == vec3(-1)) {
+        if (skipRay[i]) {
             colorStack[i] = vec3(0);
         } else {
             colorStack[i] = castRay(rayStack[i], reflectedRay, refractedRay, reflection, refraction);
@@ -279,19 +305,22 @@ vec3 castRecursiveRay(Ray ray) {
         }
 
         if (i < continuedRayCount) {
-            if (reflection == 0 || rayStack[i].direction == vec3(-1)) {
-                reflectedRay.direction = vec3(-1);
+            if (reflection == 0 || skipRay[i]) {
+                skipRay[i * 2] = true;
+            } else {
+                rayStack[i * 2] = reflectedRay;
             }
-            if (refraction == 0 || rayStack[i].direction == vec3(-1)) {
-                refractedRay.direction = vec3(-1);
+
+            if (refraction == 0 || skipRay[i]) {
+                skipRay[i * 2 + 1] = true;
+            } else {
+                rayStack[i * 2 + 1] = refractedRay;
             }
-            rayStack[i * 2] = reflectedRay;
-            rayStack[i * 2 + 1] = refractedRay;
         }
     }
 
     for (int i = rayCount - 1; i > 0; i--) {
-        if (rayStack[i].direction == vec3(-1)) {
+        if (skipRay[i]) {
             continue;
         }
         float coeff = i % 2 == 0 ? reflectionStack[i / 2] : refractionStack[i / 2];
@@ -301,6 +330,6 @@ vec3 castRecursiveRay(Ray ray) {
 }
 
 void main() {
-    vec3 color = castRecursiveRay(getFirstRay());
+    vec3 color = castRecursiveRay(getCameraRay());
     FragColor = vec4(color, 1);
 }
