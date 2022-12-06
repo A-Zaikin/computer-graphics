@@ -199,31 +199,29 @@ bool tryGetNearestHit(Ray ray, out Hit hit)
     return isObjectHit;
 }
 
-float getLightObstruction(Ray shadowRay, float distanceToLight) {
+bool getLightObstruction(Ray shadowRay, float distanceToLight) {
     Hit hit;
     float lightObstruction;
 
     for (int i = 0; i < sphereCount; i++) {
-        if (isSphereHit(spheres[i], shadowRay, hit) && hit.distanceTo < distanceToLight)
+        if (isSphereHit(spheres[i], shadowRay, hit)
+            && hit.distanceTo < distanceToLight
+            && hit.material.refraction == 0)
         {
-            lightObstruction += 1 - materials[spheres[i].materialId].refraction;
-            if (lightObstruction >= 1) {
-                return 1;
-            }
+            return true;
         }
     }
 
     for (int i = 0; i < planeCount; i++) {
-        if (isPlaneHit(planes[i], shadowRay, hit) && hit.distanceTo < distanceToLight)
+        if (isPlaneHit(planes[i], shadowRay, hit)
+            && hit.distanceTo < distanceToLight
+            && hit.material.refraction == 0)
         {
-            lightObstruction += 1 - materials[planes[i].materialId].refraction;
-            if (lightObstruction >= 1) {
-                return 1;
-            }
+            return true;
         }
     }
 
-    return lightObstruction;
+    return false;
 }
 
 vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
@@ -274,15 +272,12 @@ vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
         specular = hit.material.specular * specularIntensity * LIGHT_COLOR;
     }
 
-    float lightObstruction = getLightObstruction(shadowRay, distanceToLight);
-    vec3 color = hit.material.color * (1 - hit.material.reflection - hit.material.refraction);
-    if (shadowAlignment < 0 || lightObstruction == 1)
-    {
-        return ambient * color;
+    bool isLightObstructed = getLightObstruction(shadowRay, distanceToLight);
+    if (shadowAlignment < 0 || isLightObstructed) {
+        return ambient * hit.material.color;
     }
 
-    return (ambient + (1 - lightObstruction) * (diffuse + specular)) * color;
-    //return (ambient + diffuse + specular) * hit.material.color;
+    return (ambient + diffuse + specular) * hit.material.color;
 }
 
 vec3 castRecursiveRay(Ray ray) {
