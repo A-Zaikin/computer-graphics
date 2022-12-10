@@ -15,6 +15,7 @@ namespace Exercise6
             var points = new Vector3[sectionVertexCount * sectionCount];
             List<int> indices = new();
             var normals = new Vector3[points.Length];
+            var textureCoorinates = new Vector2[points.Length];
 
             for (LoopIndex i = new(sectionCount); !i.HasLooped; i += 1)
             {
@@ -36,9 +37,12 @@ namespace Exercise6
                             i * sectionVertexCount + j, i * sectionVertexCount + (j + 1).Value});
                     indices.AddRange(new int[] { (i - 1) * sectionVertexCount + j,
                             i * sectionVertexCount + (j + 1).Value, (i - 1) * sectionVertexCount + (j + 1).Value });
+
+                    textureCoorinates[i * sectionVertexCount + j] =
+                        new Vector2((float)i / sectionCount, (float)j / sectionVertexCount);
                 }
             }
-            return new Polyhedron(points, indices.ToArray(), normals, round);
+            return new Polyhedron(points, indices.ToArray(), normals, round, textureCoorinates);
         }
 
         public static Polyhedron CreateSphere(float radius, int sectionCount, int sideVertexCount)

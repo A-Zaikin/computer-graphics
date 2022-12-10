@@ -77,8 +77,9 @@ namespace Exercise6
             var bottomPlane = PolygonHelper.CreateRegular(Vector2.Zero, bottomRadius, vertexCount)
                 .Select(vec => new Vector3(vec.X, 0, vec.Y)).ToArray();
 
-            var coneAngle = MathF.Atan((bottomRadius - topRadius) / height);
+            var textureCoorinates = new Vector2[vertexCount * 2];
 
+            var coneAngle = MathF.Atan((bottomRadius - topRadius) / height);
             for (var i = 0; i < vertexCount; i++)
             {
                 var normal = bottomPlane[i].Normalized(); 
@@ -89,6 +90,9 @@ namespace Exercise6
                 }
                 normals[i] = normal;
                 normals[i + vertexCount] = normal;
+
+                textureCoorinates[i] = new(1, (float)i / vertexCount);
+                textureCoorinates[i + vertexCount] = new(0, (float)i / vertexCount);
             }
 
             for (LoopIndex i = new(vertexCount); !i.HasLooped; i += 1)
@@ -108,7 +112,7 @@ namespace Exercise6
             return new Polyhedron[2]
             {
                 new Polyhedron(points, planeIndices, null, false),
-                new Polyhedron(points, indices.ToArray(), normals, round),
+                new Polyhedron(points, indices.ToArray(), normals, round, textureCoorinates),
             };
         }
     }

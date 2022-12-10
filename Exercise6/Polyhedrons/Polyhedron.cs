@@ -11,6 +11,7 @@ namespace Exercise6
         public Vector3[] Normals;
         public Vector2[] TextureCoordinates;
         public float[] BufferData;
+        public int TextureIndex = -1;
 
         public bool IsRound;
 

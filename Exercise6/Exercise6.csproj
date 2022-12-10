@@ -11,22 +11,46 @@
     <None Remove="metal2.png" />
     <None Remove="Shaders\shader.frag" />
     <None Remove="Shaders\shader.vert" />
+    <None Remove="Textures\metal3.png" />
+    <None Remove="Textures\metal4.png" />
+    <None Remove="Textures\metal5.png" />
+    <None Remove="Textures\neon.png" />
+    <None Remove="Textures\neon2.png" />
+    <None Remove="Textures\paint.png" />
+    <None Remove="Textures\pipe.png" />
+    <None Remove="Textures\pipe2.png" />
+    <None Remove="Textures\pipe3.png" />
+    <None Remove="Textures\rubber.png" />
+    <None Remove="Textures\rubber2.png" />
+    <None Remove="Textures\steel.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="book.png">
+    <Content Include="Textures\neon2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="metal.png">
+    <Content Include="Textures\pipe.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="metal2.png">
+    <Content Include="Textures\rubber2.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Textures\metal2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Shaders\shader.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Shaders\shader.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\metal5.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Textures\paint.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

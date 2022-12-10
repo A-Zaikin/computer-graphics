@@ -27,11 +27,12 @@ namespace Exercise6
             CurrentIndex = new LoopIndex(Polyhedrons, Polyhedrons.Count - 1);
 
             timer.Start();
-
             var nativeWindowSettings = new NativeWindowSettings()
             {
-                Size = new Vector2i(800, 800),
-                Title = "Exercise 6",
+                Size = new Vector2i(1000, 800),
+                Title = "Exercise 6-7  |  WSADQE = rotate  |  ZX = zoom  |  arrows = next figure  |  " +
+                    "F = flat lighting  |  "
+                    + "R = poly mode  |  SPACE = auto rotation",
                 Flags = ContextFlags.ForwardCompatible,
             };
             var gameWindowSetting = new GameWindowSettings()
@@ -66,7 +67,8 @@ namespace Exercise6
                     4);
             body.Rotation.X = MathF.PI;
             body.Rotation.Y = MathF.PI / 4;
-            body.Material = new() { Color = new Vector3(1, 0.8f, 0.2f), SpecularStrength = 0.1f };
+            body.Material = new() { Color = new Vector3(1, 0.8f, 0.2f) * 0.9f, SpecularStrength = 0.1f };
+            body.TextureIndex = 0;
 
             float t1 = 0.8f, t2 = 0.6f;
             var bodyStripe = Prismatoid.CreateGeneral(
@@ -77,7 +79,8 @@ namespace Exercise6
             bodyStripe.Rotation.Y = MathF.PI / 4;
             bodyStripe.Position.Y += 0.7f;
             //bodyStripe.Scale *= 0.994f;
-            bodyStripe.Material = new() { Color = Vector3.One, SpecularStrength = 0.1f };
+            bodyStripe.Material = new() { Color = Vector3.One * 0.7f, SpecularStrength = 0.1f };
+            bodyStripe.TextureIndex = 1;
 
             var frontPanel = Prismatoid.CreateGeneral(
                 PolygonHelper.CreateRegular(Vector2.Zero, 1f, 4),
@@ -89,8 +92,10 @@ namespace Exercise6
             frontPanel.Position.Z = 0.9f;
             frontPanel.Scale.X = 0.4f;
             frontPanel.Scale.Z = 0.5f;
-            frontPanel.Material = body.Material;
-            frontPanel.Material.Color *= 0.5f;
+            //frontPanel.Material = body.Material;
+            //frontPanel.Material.Color *= 0.5f;
+            frontPanel.Material = new() { Color = new Vector3(1f, 1f, 1) * 0.3f, SpecularStrength = 0.1f };
+            frontPanel.TextureIndex = 1;
 
             var lowerBody = Prismatoid.CreateGeneral(
                 PolygonHelper.CreateRegular(Vector2.Zero, 1.5f, 4),
@@ -102,6 +107,7 @@ namespace Exercise6
             lowerBody.Scale.X = 0.8f;
             lowerBody.Scale.Z = 1.15f;
             lowerBody.Material = new() { Color = Vector3.One * 0.2f, SpecularStrength = 0.8f };
+            lowerBody.TextureIndex = 0;
 
             var eyeHolder = RotationSurfaces.CreateSphere(0.5f, 20, 20);
             eyeHolder.Position = new Vector3(0, eyeHeight, 1.15f);
@@ -115,7 +121,9 @@ namespace Exercise6
             wheel.Position.Y = -2.4f;
             wheel.Rotation.Z = MathF.PI / 2;
             wheel.Scale.X = 1.7f;
-            wheel.Material = rubber;
+            //wheel.Material = rubber;
+            wheel.Material = new() { Color = Vector3.One, SpecularStrength = 0 };
+            wheel.TextureIndex = 4;
 
             var wheelSuspension = RotationSurfaces.CreateTorus(0.6f, 0.2f, 30, 30, round: true);
             wheelSuspension.Position.Y = -1.7f;
@@ -134,6 +142,7 @@ namespace Exercise6
 
                 poly.Material = metal;
             }
+            leftArm[1].TextureIndex = 5;
 
             var leftArmWires = ComplexShape.CreateHelix(0.1f, 0.08f, 20, 20, 2.2f, 4, 0, true);
             foreach (var poly in leftArmWires)
@@ -161,6 +170,7 @@ namespace Exercise6
 
                 poly.Material = metal;
             }
+            leftForearm[1].TextureIndex = 5;
 
             var rightArm = ComplexShape.CreateCylinder(armVertexCount, 0.1f, 0.15f, 2, true);
             foreach (var poly in rightArm)
@@ -172,6 +182,7 @@ namespace Exercise6
 
                 poly.Material = metal;
             }
+            rightArm[1].TextureIndex = 5;
 
             var rightForearm = ComplexShape.CreateCylinder(armVertexCount, 0.07f, 0.1f, 1.5f, true);
             foreach (var poly in rightForearm)
@@ -184,6 +195,7 @@ namespace Exercise6
 
                 poly.Material = metal;
             }
+            rightForearm[1].TextureIndex = 5;
 
             var rightForearmWires = ComplexShape.CreateHelix(0.12f, 0.05f, 20, 20, 1.55f, 1, 0, true);
             foreach (var poly in rightForearmWires)
@@ -205,11 +217,13 @@ namespace Exercise6
             leftCap.Position = new Vector3(-1.6f, 2.3f, 0);
             leftCap.Rotation.Z = MathF.PI / 5;
             leftCap.Material = metal;
+            leftCap.TextureIndex = 0;
 
             var rightCap = Prismatoid.CreateParallelepiped(0.1f, 1, 1);
             rightCap.Position = new Vector3(1.6f, 2.3f, 0);
             rightCap.Rotation.Z = -MathF.PI / 5;
             rightCap.Material = metal;
+            rightCap.TextureIndex = 0;
 
             var antenna = ComplexShape.CreateHelix(0.2f, 0.05f, 20, 20, 2, 1, 0, true);
             foreach (var poly in antenna)
@@ -233,6 +247,7 @@ namespace Exercise6
                 poly.Position.Y = -0.75f;
                 poly.Position.Z = 1.2f;
             }
+            leftHandCylinder[1].TextureIndex = 5;
 
             var leftHandTop = Prismatoid.CreateGeneral(
                 PolygonHelper.CreateRegular(Vector2.Zero, 0.1f, 4),
@@ -264,6 +279,7 @@ namespace Exercise6
                 poly.Position.Y = 3.3f;
                 poly.Position.Z = 0.35f;
             }
+            rightHandCylinder[1].TextureIndex = 5;
 
             var rightHandTop = Prismatoid.CreateGeneral(
                 PolygonHelper.CreateRegular(Vector2.Zero, 0.1f, 4),
@@ -293,17 +309,43 @@ namespace Exercise6
             frontPanelTop.Scale.Z = 0.15f;
             frontPanelTop.Position.Z = 1.2f;
             frontPanelTop.Position.Y = -0.3f;
+            frontPanelTop.TextureIndex = 0;
 
-            var frontPanelScreen = Prismatoid.CreateGeneral(
-                PolygonHelper.CreateRegular(Vector2.Zero, 0.5f, 4),
-                PolygonHelper.CreateRegular(Vector2.Zero, 0.75f, 4), 0.5f);
-            frontPanelTop.Material = metal;
-            frontPanelTop.Rotation.Y = MathF.PI / 4;
-            frontPanelTop.Scale.Z = 0.15f;
-            frontPanelTop.Position.Z = 1.2f;
-            frontPanelTop.Position.Y = -0.3f;
+            var frontPanelTopScreen = Prismatoid.CreateGeneral(
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.35f, 4),
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.55f, 4), 0.4f);
+            frontPanelTopScreen.Material = new()
+            { Color = new Vector3(0.7f, 0.1f, 0.1f) * 1.5f, SpecularStrength = 1f };
+            frontPanelTopScreen.Rotation.Y = MathF.PI / 4;
+            frontPanelTopScreen.Scale.Z = 0.15f;
+            frontPanelTopScreen.Position.Z = 1.24f;
+            frontPanelTopScreen.Position.Y = -0.3f;
+            frontPanelTopScreen.TextureIndex = 3;
 
-            AddPolyhedron(body, bodyStripe, lowerBody, frontPanel,
+            var frontPanelBottom = Prismatoid.CreateGeneral(
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.72f, 4),
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.72f, 4), 0.51f);
+            frontPanelBottom.Material = metal;
+            frontPanelBottom.Rotation.Y = MathF.PI / 4;
+            frontPanelBottom.Scale.Z = 0.15f;
+            frontPanelBottom.Position.Z = 1.2f;
+            frontPanelBottom.Position.Y = -0.8f;
+            frontPanelBottom.TextureIndex = 0;
+
+            var frontPanelBottomScreen = Prismatoid.CreateGeneral(
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.6f, 4),
+                PolygonHelper.CreateRegular(Vector2.Zero, 0.6f, 4), 0.4f);
+            frontPanelBottomScreen.Material = new()
+            { Color = new Vector3(0.1f, 0.3f, 0.4f) * 1.5f, SpecularStrength = 1f };
+            frontPanelBottomScreen.Rotation.Y = MathF.PI / 4;
+            frontPanelBottomScreen.Scale.Z = 0.15f;
+            frontPanelBottomScreen.Position.Z = 1.25f;
+            frontPanelBottomScreen.Position.Y = -0.8f;
+            frontPanelBottomScreen.TextureIndex = 3;
+
+            var shape = new List<Polyhedron>
+            {
+                body, bodyStripe, lowerBody, frontPanel,
                 eye, eyeHolder, wheel, wheelSuspension,
                 leftArm[0], leftArm[1], leftElbow, leftArmWires[0], leftArmWires[1],
                 leftForearm[0], leftForearm[1],
@@ -312,7 +354,29 @@ namespace Exercise6
                 leftCap, rightCap, antenna[0], antenna[1],
                 leftHandCylinder[0], leftHandCylinder[1], leftHandTop, leftHandBottom,
                 rightHandCylinder[0], rightHandCylinder[1], rightHandTop, rightHandBottom,
-                frontPanelTop);
+                frontPanelTop, frontPanelTopScreen,
+                frontPanelBottom, frontPanelBottomScreen
+            };
+
+            for (var i = 0; i < 9; i++)
+            {
+                var panel = Prismatoid.CreateGeneral(
+                    PolygonHelper.CreateRegular(Vector2.Zero, 0.5f, 4),
+                    PolygonHelper.CreateRegular(Vector2.Zero, 0.6f, 4),
+                    0.05f);
+                panel.Rotation.X = MathF.PI;
+                panel.Rotation.Y = MathF.PI / 4;
+                panel.Position.Y = 0.1f + i * 0.1f;
+                panel.Position.Z = 1.25f + i * 0.01f;
+                panel.Scale.X = 0.4f;
+                panel.Scale.Z = 0.1f;
+                panel.Material = new() { Color = new Vector3(1f, 1f, 1) * 0.7f, SpecularStrength = 0.1f };
+                panel.TextureIndex = 1;
+
+                shape.Add(panel);
+            }
+
+            AddPolyhedron(shape.ToArray());
         }
 
         private static void CreatePrismatoids()
@@ -378,15 +442,6 @@ namespace Exercise6
         private static void AddPolyhedron(params Polyhedron[] shape)
         {
             Polyhedrons.Add(shape);
-
-            //foreach(var poly in shape)
-            //{
-            //    var randomColor = new Vector3(
-            //        (float)random.NextDouble(),
-            //        (float)random.NextDouble(),
-            //        (float)random.NextDouble());
-            //    poly.Material = new() { Color = randomColor.Normalized(), SpecularStrength = 0.5f };
-            //}
         }
     }
 }

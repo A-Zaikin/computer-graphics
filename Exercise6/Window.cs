@@ -6,6 +6,7 @@ using OpenTK.Mathematics;
 using System.Linq;
 using StbImageSharp;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Exercise6
 {
@@ -13,6 +14,7 @@ namespace Exercise6
     {
         private static Vector3 cameraPos = 10 * Vector3.UnitZ;
         private static Matrix4 view = Matrix4.LookAt(cameraPos, Vector3.Zero, Vector3.UnitY);
+        private List<int> textureIds = new();
 
         private float verticalFov = MathHelper.DegreesToRadians(45);
         private Matrix4 projection;
@@ -37,21 +39,26 @@ namespace Exercise6
             base.OnLoad();
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+            LoadTexture("metal2.png");
+            LoadTexture("paint.png");
+            LoadTexture("metal5.png");
+            LoadTexture("neon2.png");
+            LoadTexture("rubber2.png");
+            LoadTexture("pipe.png");
+
             LoadPolyhedrons();
 
             _shader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
             _shader.Use();
-
-            LoadTexture();
         }
 
-        private static void LoadTexture()
+        private void LoadTexture(string path)
         {
-
             var handle = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, handle);
 
             StbImage.stbi_set_flip_vertically_on_load(1);
-            var image = ImageResult.FromStream(File.OpenRead("metal2.png"), ColorComponents.RedGreenBlueAlpha);
+            var image = ImageResult.FromStream(File.OpenRead("Textures/" + path), ColorComponents.RedGreenBlueAlpha);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
                 image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
 
@@ -64,6 +71,8 @@ namespace Exercise6
                 TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D,
                 TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+
+            textureIds.Add(handle);
         }
 
         private void LoadPolyhedrons()
@@ -118,6 +127,11 @@ namespace Exercise6
 
             foreach(var polyhedron in Program.Polyhedrons[Program.CurrentIndex])
             {
+                if (polyhedron.TextureIndex != -1)
+                {
+                    GL.BindTexture(TextureTarget.Texture2D, textureIds[polyhedron.TextureIndex]);
+                }
+
                 var model = polyhedron.GetTransform();
 
                 if (Program.CurrentIndex == Program.Polyhedrons.Count - 1)
@@ -129,7 +143,8 @@ namespace Exercise6
                     GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "objectDiffuseStrength"),
                         polyhedron.Material.Color.Length);
 
-                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "isObjectTextured"), 1);
+                    var isObjectTextured = polyhedron.TextureIndex == -1 ? 0 : 1;
+                    GL.Uniform1(GL.GetUniformLocation(_shader.Handle, "isObjectTextured"), isObjectTextured);
                 }
                 else
                 {

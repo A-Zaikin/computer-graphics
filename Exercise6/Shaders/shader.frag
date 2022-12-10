@@ -51,7 +51,7 @@ void main()
         : normalize(vertexNormal);
 
     vec3 lightPosition = vec3(-3, 2, 10);
-    vec3 lightColor = vec3(1, 1, 1) * 15;
+    vec3 lightColor = vec3(1, 1, 1) * 12;
     vec3 mainLight = get_light(lightPosition, lightColor, normal);
 
     vec3 finalColor = generateColors == 1 ? normalize(color) : normalize(objectColor);
