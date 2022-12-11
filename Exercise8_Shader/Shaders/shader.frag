@@ -13,6 +13,7 @@ struct Plane {
     vec3 normal;
     vec3 height;
     vec3 width;
+    bool notTiled;
     int materialId;
 };
 
@@ -40,6 +41,11 @@ struct Hit {
     Material material;
 };
 
+struct Light {
+    vec3 position;
+    vec3 color;
+};
+
 
 uniform ivec2 resolution;
 uniform vec2 cameraSize;
@@ -47,7 +53,7 @@ uniform vec2 lookAngle;
 uniform vec3 cameraPosition;
 uniform int maxDepth;
 
-uniform vec3 lightPosition;
+uniform vec3 backgroundColor;
 
 uniform int sphereCount;
 uniform Sphere[32] spheres;
@@ -57,11 +63,11 @@ uniform Plane[32] planes;
 
 uniform Material[8] materials;
 
+uniform int lightCount;
+uniform Light[8] lights;
 
-#define BACKGROUND_COLOR vec3(0.5, 0.5, 0.5)
-#define LIGHT_GIZMO_COLOR vec3(1)
-#define LIGHT_COLOR vec3(1) * 0.7
-#define STACK_SIZE 128
+
+#define STACK_SIZE 256
 
 vec3[STACK_SIZE] colorStack;
 Ray[STACK_SIZE] rayStack;
@@ -163,7 +169,7 @@ bool isPlaneHit(Plane plane, Ray ray, out Hit hit)
     if (planePointX < 0) {
         planePointX--;
     }
-    if ((int(planePointY) + int(planePointX)) % 2 == 0) {
+    if (!plane.notTiled && (int(planePointY) + int(planePointX)) % 2 == 0) {
         hit.material.color /= 1.5;
     }
 
@@ -224,23 +230,80 @@ bool getLightObstruction(Ray shadowRay, float distanceToLight) {
     return false;
 }
 
+vec3 getDirectLightColor(Ray ray, Light light) {
+    Hit hit;
+
+    vec3 lightDirection = normalize(light.position - ray.origin);
+    float size = max(dot(ray.direction, lightDirection), 0.0);
+    float lightDistance = length(light.position - ray.origin);
+    vec3 color = (pow(size, 256.0) + 0.2*pow(size, 2.0)) * light.color;
+    Ray sunRay = Ray(ray.origin, lightDirection);
+    if (!tryGetNearestHit(sunRay, hit) || hit.distanceTo > lightDistance) {
+        return color;
+    }
+    return vec3(0);
+}
+
+vec3 getAllDirectLightColors(Ray ray) {
+    vec3 color = vec3(0);
+    for (int i = 0; i < lightCount; i++) {
+        color += getDirectLightColor(ray, lights[i]);
+    }
+    return color;
+}
+
+vec3 getLighting(Ray ray, Hit hit, Light light) {
+    // shadow
+    vec3 lightDirection = normalize(hit.point - light.position);
+    float distanceToLight = length(light.position - hit.point);
+
+    Ray shadowRay = Ray(hit.point, -lightDirection);
+    shadowRay.origin += shadowRay.direction * 0.001;
+    float shadowAlignment = dot(hit.normal, shadowRay.direction);
+    vec3 ambient = hit.material.ambient * vec3(1);
+
+    // diffuse
+    float diffuseIntensity = max(shadowAlignment, 0.0);
+    vec3 diffuse = hit.material.diffuse * light.color * diffuseIntensity;
+
+    // specular
+    vec3 specular = vec3(0);
+    if (hit.material.shininess > 0) {
+        vec3 specularDirection = reflect(lightDirection, hit.normal);
+        float specularIntensity = pow(max(dot(-ray.direction, specularDirection), 0.0), hit.material.shininess);
+        specular = hit.material.specular * specularIntensity * light.color;
+    }
+
+    bool isLightObstructed = getLightObstruction(shadowRay, distanceToLight);
+    if (shadowAlignment < 0 || isLightObstructed) {
+        return ambient;
+    }
+
+    return ambient + diffuse + specular;
+}
+
+vec3 getAllLighting(Ray ray, Hit hit) {
+    vec3 color = vec3(0);
+    for (int i = 0; i < lightCount; i++) {
+        color += getLighting(ray, hit, lights[i]);
+    }
+    return color;
+}
+
 vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
     out float materialReflection, out float materialRefraction)
 {
     Hit hit, newHit;
+    materialReflection = materialRefraction = 0;
 
     // light gizmo
-    if (isSphereHit(Sphere(lightPosition, 0.2, 0), ray, hit)
-        && !(tryGetNearestHit(ray, newHit) && newHit.distanceTo < hit.distanceTo))
-    {
-        return LIGHT_GIZMO_COLOR;
-    }
+    vec3 directLightColor = getAllDirectLightColors(ray);
 
     // main hit
     if (!tryGetNearestHit(ray, hit)) {
         materialReflection = materialRefraction = 0;
         reflectedRay = refractedRay = ray;
-        return BACKGROUND_COLOR;
+        return directLightColor + backgroundColor;
     }
 
     // reflection and refraction
@@ -251,33 +314,8 @@ vec3 castRay(Ray ray, out Ray reflectedRay, out Ray refractedRay,
     refractedRay = Ray(hit.point + hit.refractionDirection * 0.001, hit.refractionDirection);
     materialRefraction = hit.material.refraction;
 
-    // shadow
-    vec3 lightDirection = normalize(hit.point - lightPosition);
-    float distanceToLight = length(lightPosition - hit.point);
-
-    Ray shadowRay = Ray(hit.point, -lightDirection);
-    shadowRay.origin += shadowRay.direction * 0.001;
-    float shadowAlignment = dot(hit.normal, shadowRay.direction);
-    vec3 ambient = hit.material.ambient * vec3(1);
-
-    // diffuse
-    float diffuseIntensity = max(shadowAlignment, 0.0);
-    vec3 diffuse = hit.material.diffuse * LIGHT_COLOR * diffuseIntensity;
-
-    // specular
-    vec3 specular = vec3(0);
-    if (hit.material.shininess > 0) {
-        vec3 specularDirection = reflect(lightDirection, hit.normal);
-        float specularIntensity = pow(max(dot(-ray.direction, specularDirection), 0.0), hit.material.shininess);
-        specular = hit.material.specular * specularIntensity * LIGHT_COLOR;
-    }
-
-    bool isLightObstructed = getLightObstruction(shadowRay, distanceToLight);
-    if (shadowAlignment < 0 || isLightObstructed) {
-        return ambient * hit.material.color;
-    }
-
-    return (ambient + diffuse + specular) * hit.material.color;
+    vec3 lighting = getAllLighting(ray, hit);
+    return directLightColor + lighting * hit.material.color;
 }
 
 vec3 castRecursiveRay(Ray ray) {
