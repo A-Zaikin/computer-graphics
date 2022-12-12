@@ -17,6 +17,8 @@ namespace Exercise8_Shader
 
         public Sphere[] spheres;
         public Plane[] planes;
+        public Circle[] circles = Array.Empty<Circle>();
+        public Cylinder[] cylinders = Array.Empty<Cylinder>();
         public Material[] materials;
         public Light[] lights;
         public Vector3 backgroundColor;
@@ -24,6 +26,66 @@ namespace Exercise8_Shader
 
         private static Scene[] scenes = new Scene[]
         {
+            // test scene
+            new Scene()
+            {
+                spheres = new Sphere[0],
+                planes = new Plane[]
+                {
+                    //floor
+                    new Plane()
+                    {
+                        position=new(0, 0, 0),
+                        normal=new(0, 1, 0),
+                        height=new(0, 0, 1000),
+                        width=new(1000, 0, 0),
+                        materialId=0
+                    },
+                },
+                circles = new Circle[]
+                {
+                    new Circle()
+                    {
+                        position = new(0, 2, 3),
+                        normal = new(0, 0, -1),
+                        radius = 1,
+                        materialId = 1
+                    },
+                    new Circle()
+                    {
+                        position = new(0, 2, 6),
+                        normal = new(0, 0, 1),
+                        radius = 1,
+                        materialId = 1
+                    }
+                },
+                cylinders = new Cylinder[]
+                {
+                    new Cylinder()
+                    {
+                        position = new(0, 2, 3),
+                        line = new(0, 0, 3),
+                        radius = 1f,
+                        materialId = 1,
+                    }
+                },
+                materials = new Material[]
+                {
+                    new Material() { color=new(0.5f),
+                        ambient=0.1f, diffuse=1, specular=0.5f, shininess=32, reflection=0.8f },
+                    new Material() { color=new(1, 0, 0),
+                        ambient=0.1f, diffuse=1, specular=1, shininess = 64 },
+                },
+                lights = new Light[] {
+                    new Light { color = new Vector3(0.7f) },
+                },
+                backgroundColor = new Vector3(0),
+                UpdateCallback = (scene, time) =>
+                {
+                    scene.lights[0].position = new Vector3(MathF.Sin(time), 2f, MathF.Cos(time)) * 3;
+                }
+            },
+
             // diffuse, reflective and refractive spheres and a mirror
             new Scene()
             {
@@ -569,7 +631,7 @@ namespace Exercise8_Shader
 
         public void Update(float time)
         {
-            UpdateCallback?.Invoke(this,time);
+            UpdateCallback?.Invoke(this, time);
         }
 
         public void SendToShader(Shader _shader)
@@ -604,6 +666,26 @@ namespace Exercise8_Shader
                 SetUniform($"planes[{i}].width", planes[i].width);
                 SetUniform($"planes[{i}].notTiled", planes[i].notTiled);
                 SetUniform($"planes[{i}].materialId", planes[i].materialId);
+            }
+
+            SetUniform("circleCount", circles.Length);
+            for (var i = 0; i < circles.Length; i++)
+            {
+
+                SetUniform($"circles[{i}].position", circles[i].position);
+                SetUniform($"circles[{i}].normal", circles[i].normal);
+                SetUniform($"circles[{i}].radius", circles[i].radius);
+                SetUniform($"circles[{i}].materialId", circles[i].materialId);
+            }
+
+            SetUniform("cylinderCount", cylinders.Length);
+            for (var i = 0; i < cylinders.Length; i++)
+            {
+
+                SetUniform($"cylinders[{i}].position", cylinders[i].position);
+                SetUniform($"cylinders[{i}].line", cylinders[i].line);
+                SetUniform($"cylinders[{i}].radius", cylinders[i].radius);
+                SetUniform($"cylinders[{i}].materialId", cylinders[i].materialId);
             }
 
             for (var i = 0; i < materials.Length; i++)
@@ -649,6 +731,22 @@ namespace Exercise8_Shader
         public Vector3 height;
         public Vector3 width;
         public int notTiled;
+        public int materialId;
+    }
+
+    public struct Circle
+    {
+        public Vector3 position;
+        public Vector3 normal;
+        public float radius;
+        public int materialId;
+    }
+
+    public struct Cylinder
+    {
+        public Vector3 position;
+        public Vector3 line;
+        public float radius;
         public int materialId;
     }
 

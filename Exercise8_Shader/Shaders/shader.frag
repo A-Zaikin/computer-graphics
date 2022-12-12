@@ -17,6 +17,20 @@ struct Plane {
     int materialId;
 };
 
+struct Circle {
+    vec3 position;
+    vec3 normal;
+    float radius;
+    int materialId;
+};
+
+struct Cylinder {
+    vec3 position;
+    vec3 line;
+    float radius;
+    int materialId;
+};
+
 struct Material {
     vec3 color;
     float ambient;
@@ -66,6 +80,12 @@ uniform Material[8] materials;
 uniform int lightCount;
 uniform Light[8] lights;
 
+uniform int circleCount;
+uniform Circle[2] circles;
+
+uniform int cylinderCount;
+uniform Cylinder[1] cylinders;
+
 
 #define STACK_SIZE 256
 
@@ -73,7 +93,7 @@ vec3[STACK_SIZE] colorStack;
 Ray[STACK_SIZE] rayStack;
 float[STACK_SIZE] reflectionStack;
 float[STACK_SIZE] refractionStack;
-bool[STACK_SIZE] skipRay = bool[STACK_SIZE](false);
+bool[STACK_SIZE] skipRay;
 
 
 vec2 rotate(vec2 v, float angle) {
@@ -179,6 +199,91 @@ bool isPlaneHit(Plane plane, Ray ray, out Hit hit)
     return true;
 }
 
+bool isCircleHit(Circle circle, Ray ray, out Hit hit)
+{
+    float perpendicular = dot(circle.normal, ray.direction);
+    if (perpendicular == 0) {
+        return false;
+    }
+    hit.distanceTo = dot(circle.position - ray.origin, circle.normal) / perpendicular;
+    if (hit.distanceTo < 0) {
+        return false;
+    }
+
+    hit.point = ray.origin + hit.distanceTo * ray.direction;
+    hit.material = materials[circle.materialId];
+    hit.normal = perpendicular < dot(-circle.normal, ray.direction) ? circle.normal : -circle.normal;
+    hit.refractionDirection = ray.direction;
+
+    vec3 pointOnPlane = hit.point - circle.position;
+    float pointLengthSquared = dot(pointOnPlane, pointOnPlane);
+
+    return pointLengthSquared < circle.radius * circle.radius;
+}
+
+//bool isCylinderHit(Cylinder cylinder, Ray ray, out Hit hit)
+//{
+//    vec3 a = ray.origin;
+//    vec3 b = normalize(ray.direction);
+//    vec3 c = cylinder.position;
+//    vec3 d = normalize(cylinder.line);
+//
+////    float denominator = dot(b, d) * dot(b, d) - 1;
+////
+////    float s = dot(b, d) * (dot(a, d) - dot(b, c)) - dot(a, d) * dot(c, d);
+////    s /= denominator;
+////
+////    float t = dot(b, d) * (dot(c, d) - dot(a, d)) - dot(b, c) * dot(a, b);
+////    t /= denominator;
+//
+//    float denominator = dot(b, b) * dot(d, d) - dot(b, d) * dot(b, d);
+//
+//    float s = dot(c - a, b) * dot(d, d) + dot(a - c, d) * dot(b, d);
+//    s /= denominator;
+//
+//    float t = dot(a - c, d) * dot(b, b) + dot(c - a, b) * dot(b, d);
+//    t /= denominator;
+//
+//    if (s < 0 || t < 0) {
+//        return false;
+//    }
+//
+//    if (s > length(cylinder.line)) {
+//        return false;
+//    }
+//
+//    vec3 vectorBetweenRays = c + s*d - (a + t*b);
+//    float distanceBetweenRays = length(vectorBetweenRays);
+//    if (distanceBetweenRays > cylinder.radius) {
+//        return false;
+//    }
+//
+//    float intersectionDistance = sqrt(cylinder.radius * cylinder.radius
+//        - distanceBetweenRays * distanceBetweenRays);
+//
+//    hit.distanceTo = min(t - intersectionDistance, t + intersectionDistance);
+//    //hit.distanceTo = t;
+//    hit.point = a + b * hit.distanceTo;
+//    hit.material = materials[cylinder.materialId];
+//    hit.normal = normalize(hit.point - (c + s * d));
+//    hit.refractionDirection = ray.direction;
+//
+//    return true;
+//}
+
+bool isCylinderHit(Cylinder cylinder, Ray ray, out Hit hit)
+{
+//    float perpendicular = dot(normalize(cylinder.line), ray.direction);
+//    if (perpendicular == 0) {
+//        return false;
+//    }
+//    float distanceToPlane = dot(cylinder.position - ray.origin, cylinder.line) / perpendicular;
+//    vec3 planeHitPoint = ray.origin + distanceToPlane * ray.direction;
+//    vec3 planeDirection = ray.direction;
+//    vec3 pointOnPlane = hit.point - plane.position;
+    return false;
+}
+
 bool tryGetNearestHit(Ray ray, out Hit hit)
 {
     Hit newHit;
@@ -195,6 +300,24 @@ bool tryGetNearestHit(Ray ray, out Hit hit)
 
     for (int i = 0; i < planeCount; i++) {
         if (isPlaneHit(planes[i], ray, newHit)
+            && (isObjectHit == false || newHit.distanceTo < hit.distanceTo))
+        {
+            hit = newHit;
+            isObjectHit = true;
+        }
+    }
+
+    for (int i = 0; i < circleCount; i++) {
+        if (isCircleHit(circles[i], ray, newHit)
+            && (isObjectHit == false || newHit.distanceTo < hit.distanceTo))
+        {
+            hit = newHit;
+            isObjectHit = true;
+        }
+    }
+
+    for (int i = 0; i < cylinderCount; i++) {
+        if (isCylinderHit(cylinders[i], ray, newHit)
             && (isObjectHit == false || newHit.distanceTo < hit.distanceTo))
         {
             hit = newHit;
@@ -220,6 +343,24 @@ bool getLightObstruction(Ray shadowRay, float distanceToLight) {
 
     for (int i = 0; i < planeCount; i++) {
         if (isPlaneHit(planes[i], shadowRay, hit)
+            && hit.distanceTo < distanceToLight
+            && hit.material.refraction == 0)
+        {
+            return true;
+        }
+    }
+
+    for (int i = 0; i < circleCount; i++) {
+        if (isCircleHit(circles[i], shadowRay, hit)
+            && hit.distanceTo < distanceToLight
+            && hit.material.refraction == 0)
+        {
+            return true;
+        }
+    }
+
+    for (int i = 0; i < cylinderCount; i++) {
+        if (isCylinderHit(cylinders[i], shadowRay, hit)
             && hit.distanceTo < distanceToLight
             && hit.material.refraction == 0)
         {
@@ -363,6 +504,9 @@ vec3 castRecursiveRay(Ray ray) {
 }
 
 void main() {
+    for (int i = 0; i < STACK_SIZE; i++) {
+        skipRay[i] = false;
+    }
     vec3 color = castRecursiveRay(getCameraRay());
     FragColor = vec4(color, 1);
 }
